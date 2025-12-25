@@ -1,10 +1,11 @@
 import './App.css'
+import Editor from './pages/Editor'
 
 function App() {
 
   return (
     <>
-    Sagnik Jana
+    <Editor />
     </>
   )
 }
