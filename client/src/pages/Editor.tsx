@@ -2,12 +2,13 @@ import Menubar from "@/components/Menubar";
 import { useEffect } from "react";
 import { Stage, Layer } from "react-konva";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { addShape, updateShape, setCanvasSize } from "@/store/slices/editorSlice";
-import { renderShape } from "@/components/shapes/ShapeRenderer";
+import { addShape, updateShape, setCanvasSize, selectShape } from "@/store/slices/editorSlice";
+import { SelectableShape } from "@/components/shapes/SelectableShape";
 
 function Editor() {
   const dispatch = useAppDispatch();
   const shapes = useAppSelector((state) => state.editor.shapes);
+  const selectedShapeId = useAppSelector((state) => state.editor.selectedShapeId);
   const canvasWidth = useAppSelector((state) => state.editor.canvasWidth);
   const canvasHeight = useAppSelector((state) => state.editor.canvasHeight);
 
@@ -99,14 +100,67 @@ function Editor() {
     }));
   };
 
+  const handleTransformEnd = (shapeId: string) => (e: any) => {
+    const node = e.target;
+    const shape = shapes.find(s => s.id === shapeId);
+    if (!shape) return;
+
+    const updates: any = {
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation(),
+    };
+
+    // Update dimensions based on shape type
+    if (shape.type === 'circle') {
+      updates.radius = Math.max(5, node.width() / 2);
+    } else if (shape.type === 'rectangle') {
+      updates.width = Math.max(5, node.width());
+      updates.height = Math.max(5, node.height());
+    } else if (shape.type === 'ellipse') {
+      updates.width = Math.max(5, node.width());
+      updates.height = Math.max(5, node.height());
+    } else if (shape.type === 'text') {
+      updates.fontSize = Math.max(8, node.fontSize() * e.scaleY);
+    }
+
+    dispatch(updateShape({
+      id: shapeId,
+      updates,
+    }));
+  };
+
+  const handleSelect = (shapeId: string) => () => {
+    dispatch(selectShape(shapeId));
+  };
+
+  const handleStageClick = (e: any) => {
+    // Deselect when clicking on empty area
+    if (e.target === e.target.getStage()) {
+      dispatch(selectShape(null));
+    }
+  };
+
   return (
     <div>
       <Menubar />
-      <Stage width={canvasWidth} height={canvasHeight}>
+      <Stage 
+        width={canvasWidth} 
+        height={canvasHeight}
+        onClick={handleStageClick}
+        onTap={handleStageClick}
+      >
         <Layer>
-          {shapes.map((shape) => 
-            renderShape(shape, handleDragEnd(shape.id))
-          )}
+          {shapes.map((shape) => (
+            <SelectableShape
+              key={shape.id}
+              shape={shape}
+              isSelected={shape.id === selectedShapeId}
+              onSelect={handleSelect(shape.id)}
+              onDragEnd={handleDragEnd(shape.id)}
+              onTransformEnd={handleTransformEnd(shape.id)}
+            />
+          ))}
         </Layer>
       </Stage>
     </div>
