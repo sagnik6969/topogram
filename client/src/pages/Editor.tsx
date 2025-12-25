@@ -1,9 +1,9 @@
-import TopMenuber from "@/components/top-menuber/TopMenuber";
+import Menubar from "@/components/Menuber";
 
 function Editor() {
   return (
     <div>
-      <TopMenuber />
+      <Menubar />
     </div>
   );
 }

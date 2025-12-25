@@ -33,7 +33,7 @@ function TopMenuber() {
   );
 
   return (
-    <div className="bg-background border-slate-200 border rounded flex flex-col items-center justify-center w-fit shadow-md mt-10 ml-3">
+    <div className="bg-background border-slate-200 border rounded-sm flex flex-col items-center justify-center w-fit shadow-md mt-10 ml-3">
       {menubarItems.map((item, index) => (
         <MenubarItem key={index} icon={item.icon} />
       ))}
