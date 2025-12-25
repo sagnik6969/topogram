@@ -1,8 +1,12 @@
 import { Search, Square, Circle, MousePointer2, Group } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, type ComponentType, type SVGProps } from "react";
 // import React from 'react';
 
-function MenubarItem({ icon: Icon }: any) {
+interface MenubarItemProps {
+  icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+}
+
+function MenubarItem({ icon: Icon }: MenubarItemProps) {
   return (
     <button className="p-3 hover:bg-slate-100 m-1 rounded">
       {<Icon size={14} />}

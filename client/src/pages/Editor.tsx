@@ -8,7 +8,7 @@ function Editor() {
   return (
     <div>
       <Menubar />
-      <Stage width={800} height={600}>
+      <Stage width={window.innerWidth} height={window.innerHeight}>
         <Layer>
           <Circle
             x={pos.x}
