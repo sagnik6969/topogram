@@ -1,5 +1,4 @@
 import Menubar from "@/components/Menubar";
-import ShapeToolbar from "@/components/ShapeToolbar";
 import { useEffect } from "react";
 import { Stage, Layer } from "react-konva";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
