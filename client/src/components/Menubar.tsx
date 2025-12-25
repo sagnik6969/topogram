@@ -10,7 +10,7 @@ function MenubarItem({ icon: Icon }: any) {
   );
 }
 
-function TopMenuber() {
+function Menubar() {
   const menubarItems = useMemo(
     () => [
       {
@@ -33,7 +33,7 @@ function TopMenuber() {
   );
 
   return (
-    <div className="bg-background border-slate-200 border rounded-sm flex flex-col items-center justify-center w-fit shadow-md mt-10 ml-3">
+    <div className="bg-background border-slate-200 border rounded-sm flex flex-col items-center justify-center w-fit shadow-md fixed top-[30%] left-3 z-50">
       {menubarItems.map((item, index) => (
         <MenubarItem key={index} icon={item.icon} />
       ))}
@@ -41,4 +41,4 @@ function TopMenuber() {
   );
 }
 
-export default TopMenuber;
+export default Menubar;
