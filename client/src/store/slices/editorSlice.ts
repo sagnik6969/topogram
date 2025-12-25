@@ -2,13 +2,25 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface Shape {
   id: string;
-  type: 'circle' | 'rectangle' | 'line';
+  type: 'circle' | 'rectangle' | 'line' | 'ellipse' | 'text';
   x: number;
   y: number;
   fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  // Circle properties
   radius?: number;
+  // Rectangle & Ellipse properties
   width?: number;
   height?: number;
+  // Line properties
+  points?: number[];
+  // Text properties
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  rotation?: number;
+  opacity?: number;
 }
 
 interface EditorState {
