@@ -118,8 +118,11 @@ function Editor() {
       updates.width = Math.max(5, node.width());
       updates.height = Math.max(5, node.height());
     } else if (shape.type === 'ellipse') {
-      updates.width = Math.max(5, node.width());
-      updates.height = Math.max(5, node.height());
+      console.log(node.scaleX(), node.scaleY());
+      console.log(node.width(), node.height());
+      updates.radiusX = node.radiusX() * node.scaleX();
+      updates.radiusY = node.radiusY() * node.scaleY();
+      console.log(node)
     } else if (shape.type === 'text') {
       updates.fontSize = Math.max(8, node.fontSize() * e.scaleY);
     }

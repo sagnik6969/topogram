@@ -27,6 +27,7 @@ export const CircleShape = forwardRef<Konva.Circle, ShapeRendererProps>(
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
+        strokeScaleEnabled={false}
       />
     );
   }
@@ -51,6 +52,7 @@ export const RectangleShape = forwardRef<Konva.Rect, ShapeRendererProps>(
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
+        strokeScaleEnabled={false}
       />
     );
   }
@@ -73,6 +75,7 @@ export const LineShape = forwardRef<Konva.Line, ShapeRendererProps>(
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
+        strokeScaleEnabled={false}
       />
     );
   }
@@ -97,6 +100,7 @@ export const EllipseShape = forwardRef<Konva.Ellipse, ShapeRendererProps>(
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
+        strokeScaleEnabled={false}
       />
     );
   }
@@ -122,6 +126,7 @@ export const TextShape = forwardRef<Konva.Text, ShapeRendererProps>(
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
+        strokeScaleEnabled={false}
       />
     );
   }

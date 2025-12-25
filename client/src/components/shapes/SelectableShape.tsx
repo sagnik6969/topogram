@@ -39,19 +39,8 @@ export function SelectableShape({
   const handleTransformEnd = (e: any) => {
     const node = shapeRef.current;
     if (!node) return;
-
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-
-    // Reset scale to 1 and update dimensions instead
-    node.scaleX(1);
-    node.scaleY(1);
-
-    onTransformEnd({
-      ...e,
-      scaleX,
-      scaleY,
-    });
+ 
+    onTransformEnd(e);
   };
 
   const shapeProps = {

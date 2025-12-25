@@ -21,6 +21,9 @@ export interface Shape {
   fontFamily?: string;
   rotation?: number;
   opacity?: number;
+  // ellipse properties
+  radiusX?: number;
+  radiusY?: number
 }
 
 interface EditorState {
@@ -48,6 +51,9 @@ const editorSlice = createSlice({
       const shape = state.shapes.find(s => s.id === action.payload.id);
       if (shape) {
         Object.assign(shape, action.payload.updates);
+      }
+      else {
+        console.error(`Shape with ID ${action.payload.id} not found`);
       }
     },
     removeShape: (state, action: PayloadAction<string>) => {
