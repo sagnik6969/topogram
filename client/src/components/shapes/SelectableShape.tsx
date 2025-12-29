@@ -39,7 +39,7 @@ export function SelectableShape({
   const handleTransformEnd = (e: any) => {
     const node = shapeRef.current;
     if (!node) return;
- 
+
     onTransformEnd(e);
   };
 
@@ -52,15 +52,15 @@ export function SelectableShape({
 
   const renderShape = () => {
     switch (shape.type) {
-      case 'circle':
+      case "circle":
         return <CircleShape ref={shapeRef} {...shapeProps} />;
-      case 'rectangle':
+      case "rectangle":
         return <RectangleShape ref={shapeRef} {...shapeProps} />;
-      case 'line':
+      case "line":
         return <LineShape ref={shapeRef} {...shapeProps} />;
-      case 'ellipse':
+      case "ellipse":
         return <EllipseShape ref={shapeRef} {...shapeProps} />;
-      case 'text':
+      case "text":
         return <TextShape ref={shapeRef} {...shapeProps} />;
       default:
         return null;
@@ -82,17 +82,17 @@ export function SelectableShape({
             return newBox;
           }}
           enabledAnchors={
-            shape.type === 'line'
-              ? ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+            shape.type === "text"
+              ? ["top-left", "top-right", "bottom-left", "bottom-right"]
               : [
-                  'top-left',
-                  'top-center',
-                  'top-right',
-                  'middle-right',
-                  'middle-left',
-                  'bottom-left',
-                  'bottom-center',
-                  'bottom-right',
+                  "top-left",
+                  "top-center",
+                  "top-right",
+                  "middle-right",
+                  "middle-left",
+                  "bottom-left",
+                  "bottom-center",
+                  "bottom-right",
                 ]
           }
           rotateEnabled={true}

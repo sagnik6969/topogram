@@ -55,20 +55,15 @@ function Editor() {
       rotation: node.rotation(),
     };
 
-    // Update dimensions based on shape type
-    if (shape.type === "circle") {
-      updates.radius = node.width() / 2;
-    } else if (shape.type === "rectangle") {
-      updates.width = node.width();
-      updates.height = node.height();
+    if (shape.type === "rectangle") {
+      console.log(node);
+      updates.width = node.width() * node.scaleX();
+      updates.height = node.height() * node.scaleY();
     } else if (shape.type === "ellipse") {
-      console.log(node.scaleX(), node.scaleY());
-      console.log(node.width(), node.height());
       updates.radiusX = node.radiusX() * node.scaleX();
       updates.radiusY = node.radiusY() * node.scaleY();
-      console.log(node);
     } else if (shape.type === "text") {
-      updates.fontSize = Math.max(8, node.fontSize() * e.scaleY);
+      updates.fontSize = node.fontSize() * node.scaleY();
     }
 
     node.scaleX(1);

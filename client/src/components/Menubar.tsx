@@ -3,7 +3,6 @@ import {
   Square,
   Circle,
   MousePointer2,
-  Minus,
   Ellipsis,
   Type,
 } from "lucide-react";
@@ -11,9 +10,7 @@ import { useMemo, type ComponentType, type SVGProps } from "react";
 import { useAppDispatch } from "@/store/hooks";
 import { addShape } from "@/store/slices/editorSlice";
 import {
-  createCircle,
   createRectangle,
-  createLine,
   createEllipse,
   createText,
   generateShapeId,
@@ -42,19 +39,6 @@ function MenubarItem({ icon: Icon, onClick, active }: MenubarItemProps) {
 function Menubar() {
   const dispatch = useAppDispatch();
 
-  const addCircleShape = () => {
-    const circle = createCircle(
-      generateShapeId("circle"),
-      Math.random() * 400 + 100,
-      Math.random() * 300 + 100,
-      {
-        radius: 50,
-        ...COLOR_PRESETS.slate,
-      }
-    );
-    dispatch(addShape(circle));
-  };
-
   const addRectangleShape = () => {
     const rectangle = createRectangle(
       generateShapeId("rectangle"),
@@ -67,20 +51,6 @@ function Menubar() {
       }
     );
     dispatch(addShape(rectangle));
-  };
-
-  const addLineShape = () => {
-    const line = createLine(
-      generateShapeId("line"),
-      Math.random() * 400 + 100,
-      Math.random() * 300 + 100,
-      [0, 0, 100, 0, 100, 50, 0, 50],
-      {
-        ...COLOR_PRESETS.slate,
-        strokeWidth: 3,
-      }
-    );
-    dispatch(addShape(line));
   };
 
   const addEllipseShape = () => {
@@ -105,7 +75,7 @@ function Menubar() {
       "New Text",
       {
         fontSize: 20,
-        fill: COLOR_PRESETS.slate.fill,
+        fill: COLOR_PRESETS.slate.stroke,
       }
     );
     dispatch(addShape(text));
@@ -114,32 +84,28 @@ function Menubar() {
   const menubarItems = useMemo(
     () => [
       {
+        icon: Search,
+        onClick: undefined, // Search/zoom tool (to be implemented)
+      },
+      {
         icon: MousePointer2,
         onClick: undefined, // Selection tool (to be implemented)
       },
       {
         icon: Circle,
-        onClick: addCircleShape,
+        onClick: addEllipseShape,
       },
       {
         icon: Square,
         onClick: addRectangleShape,
       },
       {
-        icon: Minus,
-        onClick: addLineShape,
-      },
-      {
-        icon: Ellipsis,
-        onClick: addEllipseShape,
-      },
-      {
         icon: Type,
         onClick: addTextShape,
       },
       {
-        icon: Search,
-        onClick: undefined, // Search/zoom tool (to be implemented)
+        icon: Ellipsis,
+        onClick: undefined,
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
