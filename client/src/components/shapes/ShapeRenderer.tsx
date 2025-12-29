@@ -19,7 +19,7 @@ export const CircleShape = forwardRef<Konva.Circle, ShapeRendererProps>(
         y={shape.y}
         radius={shape.radius}
         fill={shape.fill}
-        stroke={isSelected ? '#0066FF' : shape.stroke}
+        stroke={isSelected ? "#0066FF" : shape.stroke}
         strokeWidth={isSelected ? 3 : shape.strokeWidth}
         rotation={shape.rotation}
         opacity={shape.opacity}
@@ -32,7 +32,7 @@ export const CircleShape = forwardRef<Konva.Circle, ShapeRendererProps>(
     );
   }
 );
-CircleShape.displayName = 'CircleShape';
+CircleShape.displayName = "CircleShape";
 
 export const RectangleShape = forwardRef<Konva.Rect, ShapeRendererProps>(
   ({ shape, onDragEnd, onClick, isSelected }, ref) => {
@@ -44,7 +44,7 @@ export const RectangleShape = forwardRef<Konva.Rect, ShapeRendererProps>(
         width={shape.width}
         height={shape.height}
         fill={shape.fill}
-        stroke={isSelected ? '#0066FF' : shape.stroke}
+        stroke={isSelected ? "#0066FF" : shape.stroke}
         strokeWidth={isSelected ? 3 : shape.strokeWidth}
         rotation={shape.rotation}
         opacity={shape.opacity}
@@ -57,7 +57,7 @@ export const RectangleShape = forwardRef<Konva.Rect, ShapeRendererProps>(
     );
   }
 );
-RectangleShape.displayName = 'RectangleShape';
+RectangleShape.displayName = "RectangleShape";
 
 export const LineShape = forwardRef<Konva.Line, ShapeRendererProps>(
   ({ shape, onDragEnd, onClick, isSelected }, ref) => {
@@ -67,8 +67,8 @@ export const LineShape = forwardRef<Konva.Line, ShapeRendererProps>(
         x={shape.x}
         y={shape.y}
         points={shape.points}
-        stroke={isSelected ? '#0066FF' : (shape.stroke || '#000')}
-        strokeWidth={isSelected ? 4 : (shape.strokeWidth || 2)}
+        stroke={isSelected ? "#0066FF" : shape.stroke || "#000"}
+        strokeWidth={isSelected ? 4 : shape.strokeWidth || 2}
         rotation={shape.rotation}
         opacity={shape.opacity}
         draggable
@@ -80,7 +80,7 @@ export const LineShape = forwardRef<Konva.Line, ShapeRendererProps>(
     );
   }
 );
-LineShape.displayName = 'LineShape';
+LineShape.displayName = "LineShape";
 
 export const EllipseShape = forwardRef<Konva.Ellipse, ShapeRendererProps>(
   ({ shape, onDragEnd, onClick, isSelected }, ref) => {
@@ -89,10 +89,10 @@ export const EllipseShape = forwardRef<Konva.Ellipse, ShapeRendererProps>(
         ref={ref}
         x={shape.x}
         y={shape.y}
-        radiusX={(shape.width || 100) / 2}
-        radiusY={(shape.height || 60) / 2}
+        radiusX={shape.radiusX!}
+        radiusY={shape.radiusY!}
         fill={shape.fill}
-        stroke={isSelected ? '#0066FF' : shape.stroke}
+        stroke={isSelected ? "#0066FF" : shape.stroke}
         strokeWidth={isSelected ? 3 : shape.strokeWidth}
         rotation={shape.rotation}
         opacity={shape.opacity}
@@ -105,7 +105,7 @@ export const EllipseShape = forwardRef<Konva.Ellipse, ShapeRendererProps>(
     );
   }
 );
-EllipseShape.displayName = 'EllipseShape';
+EllipseShape.displayName = "EllipseShape";
 
 export const TextShape = forwardRef<Konva.Text, ShapeRendererProps>(
   ({ shape, onDragEnd, onClick, isSelected }, ref) => {
@@ -114,11 +114,11 @@ export const TextShape = forwardRef<Konva.Text, ShapeRendererProps>(
         ref={ref}
         x={shape.x}
         y={shape.y}
-        text={shape.text || 'Text'}
+        text={shape.text || "Text"}
         fontSize={shape.fontSize || 16}
-        fontFamily={shape.fontFamily || 'Arial'}
-        fill={shape.fill || '#000'}
-        stroke={isSelected ? '#0066FF' : undefined}
+        fontFamily={shape.fontFamily || "Arial"}
+        fill={shape.fill || "#000"}
+        stroke={isSelected ? "#0066FF" : undefined}
         strokeWidth={isSelected ? 1 : 0}
         rotation={shape.rotation}
         opacity={shape.opacity}
@@ -131,4 +131,4 @@ export const TextShape = forwardRef<Konva.Text, ShapeRendererProps>(
     );
   }
 );
-TextShape.displayName = 'TextShape';
+TextShape.displayName = "TextShape";

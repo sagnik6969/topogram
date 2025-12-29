@@ -15,7 +15,7 @@ export default function ShapeToolbar() {
 
   const addCircleShape = () => {
     const circle = createCircle(
-      generateShapeId('circle'),
+      generateShapeId("circle"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
@@ -28,7 +28,7 @@ export default function ShapeToolbar() {
 
   const addRectangleShape = () => {
     const rectangle = createRectangle(
-      generateShapeId('rectangle'),
+      generateShapeId("rectangle"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
@@ -42,7 +42,7 @@ export default function ShapeToolbar() {
 
   const addLineShape = () => {
     const line = createLine(
-      generateShapeId('line'),
+      generateShapeId("line"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       [0, 0, 100, 0, 100, 50, 0, 50],
@@ -56,13 +56,13 @@ export default function ShapeToolbar() {
 
   const addEllipseShape = () => {
     const ellipse = createEllipse(
-      generateShapeId('ellipse'),
+      generateShapeId("ellipse"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
         width: 140,
         height: 80,
-        ...COLOR_PRESETS.purple,
+        ...COLOR_PRESETS.slate,
       }
     );
     dispatch(addShape(ellipse));
@@ -70,10 +70,10 @@ export default function ShapeToolbar() {
 
   const addTextShape = () => {
     const text = createText(
-      generateShapeId('text'),
+      generateShapeId("text"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
-      'New Text',
+      "New Text",
       {
         fontSize: 20,
         fill: COLOR_PRESETS.orange.fill,
@@ -85,35 +85,35 @@ export default function ShapeToolbar() {
   return (
     <div className="fixed top-20 left-4 bg-white shadow-lg rounded-lg p-4 space-y-2 z-10">
       <h3 className="font-semibold text-sm text-gray-700 mb-3">Add Shapes</h3>
-      
+
       <button
         onClick={addCircleShape}
         className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors"
       >
         ⭕ Circle
       </button>
-      
+
       <button
         onClick={addRectangleShape}
         className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium transition-colors"
       >
         ⬜ Rectangle
       </button>
-      
+
       <button
         onClick={addLineShape}
         className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium transition-colors"
       >
         📏 Line
       </button>
-      
+
       <button
         onClick={addEllipseShape}
         className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-md text-sm font-medium transition-colors"
       >
         🥚 Ellipse
       </button>
-      
+
       <button
         onClick={addTextShape}
         className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md text-sm font-medium transition-colors"

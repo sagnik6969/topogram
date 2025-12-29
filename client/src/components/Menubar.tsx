@@ -1,8 +1,8 @@
-import { 
-  Search, 
-  Square, 
-  Circle, 
-  MousePointer2, 
+import {
+  Search,
+  Square,
+  Circle,
+  MousePointer2,
   Minus,
   Ellipsis,
   Type,
@@ -28,9 +28,9 @@ interface MenubarItemProps {
 
 function MenubarItem({ icon: Icon, onClick, active }: MenubarItemProps) {
   return (
-    <button 
+    <button
       className={`p-3 hover:bg-slate-100 m-1 rounded transition-colors ${
-        active ? 'bg-slate-200' : ''
+        active ? "bg-slate-200" : ""
       }`}
       onClick={onClick}
     >
@@ -44,12 +44,12 @@ function Menubar() {
 
   const addCircleShape = () => {
     const circle = createCircle(
-      generateShapeId('circle'),
+      generateShapeId("circle"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
         radius: 50,
-        ...COLOR_PRESETS.blue,
+        ...COLOR_PRESETS.slate,
       }
     );
     dispatch(addShape(circle));
@@ -57,13 +57,13 @@ function Menubar() {
 
   const addRectangleShape = () => {
     const rectangle = createRectangle(
-      generateShapeId('rectangle'),
+      generateShapeId("rectangle"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
         width: 120,
         height: 80,
-        ...COLOR_PRESETS.green,
+        ...COLOR_PRESETS.slate,
       }
     );
     dispatch(addShape(rectangle));
@@ -71,12 +71,12 @@ function Menubar() {
 
   const addLineShape = () => {
     const line = createLine(
-      generateShapeId('line'),
+      generateShapeId("line"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       [0, 0, 100, 0, 100, 50, 0, 50],
       {
-        ...COLOR_PRESETS.red,
+        ...COLOR_PRESETS.slate,
         strokeWidth: 3,
       }
     );
@@ -85,13 +85,13 @@ function Menubar() {
 
   const addEllipseShape = () => {
     const ellipse = createEllipse(
-      generateShapeId('ellipse'),
+      generateShapeId("ellipse"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
       {
-        width: 140,
-        height: 80,
-        ...COLOR_PRESETS.purple,
+        radiusX: 140,
+        radiusY: 80,
+        ...COLOR_PRESETS.slate,
       }
     );
     dispatch(addShape(ellipse));
@@ -99,13 +99,13 @@ function Menubar() {
 
   const addTextShape = () => {
     const text = createText(
-      generateShapeId('text'),
+      generateShapeId("text"),
       Math.random() * 400 + 100,
       Math.random() * 300 + 100,
-      'New Text',
+      "New Text",
       {
         fontSize: 20,
-        fill: COLOR_PRESETS.orange.fill,
+        fill: COLOR_PRESETS.slate.fill,
       }
     );
     dispatch(addShape(text));
