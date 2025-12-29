@@ -15,19 +15,12 @@ export const CircleShape = forwardRef<Konva.Circle, ShapeRendererProps>(
     return (
       <Circle
         ref={ref}
-        x={shape.x}
-        y={shape.y}
-        radius={shape.radius}
-        fill={shape.fill}
-        stroke={isSelected ? "#0066FF" : shape.stroke}
-        strokeWidth={isSelected ? 3 : shape.strokeWidth}
-        rotation={shape.rotation}
-        opacity={shape.opacity}
         draggable
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
         strokeScaleEnabled={false}
+        {...shape}
       />
     );
   }
@@ -39,20 +32,12 @@ export const RectangleShape = forwardRef<Konva.Rect, ShapeRendererProps>(
     return (
       <Rect
         ref={ref}
-        x={shape.x}
-        y={shape.y}
-        width={shape.width}
-        height={shape.height}
-        fill={shape.fill}
-        stroke={isSelected ? "#0066FF" : shape.stroke}
-        strokeWidth={isSelected ? 3 : shape.strokeWidth}
-        rotation={shape.rotation}
-        opacity={shape.opacity}
         draggable
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
         strokeScaleEnabled={false}
+        {...shape}
       />
     );
   }
@@ -64,18 +49,12 @@ export const LineShape = forwardRef<Konva.Line, ShapeRendererProps>(
     return (
       <Line
         ref={ref}
-        x={shape.x}
-        y={shape.y}
-        points={shape.points}
-        stroke={isSelected ? "#0066FF" : shape.stroke || "#000"}
-        strokeWidth={isSelected ? 4 : shape.strokeWidth || 2}
-        rotation={shape.rotation}
-        opacity={shape.opacity}
         draggable
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
         strokeScaleEnabled={false}
+        {...shape}
       />
     );
   }
@@ -87,20 +66,14 @@ export const EllipseShape = forwardRef<Konva.Ellipse, ShapeRendererProps>(
     return (
       <Ellipse
         ref={ref}
-        x={shape.x}
-        y={shape.y}
-        radiusX={shape.radiusX!}
-        radiusY={shape.radiusY!}
-        fill={shape.fill}
-        stroke={isSelected ? "#0066FF" : shape.stroke}
-        strokeWidth={isSelected ? 3 : shape.strokeWidth}
-        rotation={shape.rotation}
-        opacity={shape.opacity}
         draggable
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
         strokeScaleEnabled={false}
+        radiusX={shape.radiusX ?? 0}
+        radiusY={shape.radiusY ?? 0}
+        {...shape}
       />
     );
   }
@@ -112,21 +85,12 @@ export const TextShape = forwardRef<Konva.Text, ShapeRendererProps>(
     return (
       <Text
         ref={ref}
-        x={shape.x}
-        y={shape.y}
-        text={shape.text || "Text"}
-        fontSize={shape.fontSize || 16}
-        fontFamily={shape.fontFamily || "Arial"}
-        fill={shape.fill || "#000"}
-        stroke={isSelected ? "#0066FF" : undefined}
-        strokeWidth={isSelected ? 1 : 0}
-        rotation={shape.rotation}
-        opacity={shape.opacity}
         draggable
         onDragEnd={onDragEnd}
         onClick={onClick}
         onTap={onClick}
         strokeScaleEnabled={false}
+        {...shape}
       />
     );
   }
