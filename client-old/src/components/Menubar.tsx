@@ -5,10 +5,11 @@ import {
   MousePointer2,
   Ellipsis,
   Type,
+  ArrowRight,
 } from "lucide-react";
 import { useMemo, type ComponentType, type SVGProps } from "react";
-import { useAppDispatch } from "@/store/hooks";
-import { addShape } from "@/store/slices/editorSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { addShape, setActiveTool } from "@/store/slices/editorSlice";
 import {
   createRectangle,
   createEllipse,
@@ -38,6 +39,7 @@ function MenubarItem({ icon: Icon, onClick, active }: MenubarItemProps) {
 
 function Menubar() {
   const dispatch = useAppDispatch();
+  const activeTool = useAppSelector((state) => state.editor.activeTool);
 
   const addRectangleShape = () => {
     const rectangle = createRectangle(
@@ -89,19 +91,37 @@ function Menubar() {
       },
       {
         icon: MousePointer2,
-        onClick: undefined, // Selection tool (to be implemented)
-      },
-      {
-        icon: Circle,
-        onClick: addEllipseShape,
+        onClick: () => dispatch(setActiveTool("select")),
+        active: activeTool === "select",
       },
       {
         icon: Square,
-        onClick: addRectangleShape,
+        onClick: () => {
+             dispatch(setActiveTool("select"));
+             addRectangleShape();
+        },
+        active: false,
+      },
+      {
+        icon: Circle,
+        onClick: () => {
+             dispatch(setActiveTool("select"));
+             addEllipseShape();
+        },
+        active: false,
       },
       {
         icon: Type,
-        onClick: addTextShape,
+        onClick: () => {
+            dispatch(setActiveTool("select"));
+            addTextShape();
+        },
+        active: false,
+      },
+      {
+        icon: ArrowRight,
+        onClick: () => dispatch(setActiveTool("connector")),
+        active: activeTool === "connector",
       },
       {
         icon: Ellipsis,
@@ -109,13 +129,13 @@ function Menubar() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [activeTool]
   );
 
   return (
     <div className="bg-background border-slate-200 border rounded-sm flex flex-col items-center justify-center w-fit shadow-md fixed top-[30%] left-3 z-50">
       {menubarItems.map((item, index) => (
-        <MenubarItem key={index} icon={item.icon} onClick={item.onClick} />
+        <MenubarItem key={index} icon={item.icon} onClick={item.onClick} active={item.active} />
       ))}
     </div>
   );

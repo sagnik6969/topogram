@@ -13,7 +13,7 @@ import {
 interface SelectableShapeProps {
   shape: Shape;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e: any) => void;
   onDragEnd: (e: any) => void;
   onTransformEnd: (e: any) => void;
 }

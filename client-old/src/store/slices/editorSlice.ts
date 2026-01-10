@@ -26,16 +26,28 @@ export interface Shape {
   radiusY?: number
 }
 
+export interface Connection {
+  id: string;
+  from: string; // source shape ID
+  to: string;   // target shape ID
+}
+
+export type ActiveTool = 'select' | 'hand' | 'connector';
+
 interface EditorState {
   shapes: Shape[];
+  connections: Connection[];
   selectedShapeId: string | null;
+  activeTool: ActiveTool;
   canvasWidth: number;
   canvasHeight: number;
 }
 
 const initialState: EditorState = {
   shapes: [],
+  connections: [],
   selectedShapeId: null,
+  activeTool: 'select',
   canvasWidth: window.innerWidth,
   canvasHeight: window.innerHeight,
 };
@@ -58,6 +70,16 @@ const editorSlice = createSlice({
     },
     removeShape: (state, action: PayloadAction<string>) => {
       state.shapes = state.shapes.filter(s => s.id !== action.payload);
+      state.connections = state.connections.filter(c => c.from !== action.payload && c.to !== action.payload);
+    },
+    setActiveTool: (state, action: PayloadAction<ActiveTool>) => {
+      state.activeTool = action.payload;
+    },
+    addConnection: (state, action: PayloadAction<Connection>) => {
+      state.connections.push(action.payload);
+    },
+    removeConnection: (state, action: PayloadAction<string>) => {
+      state.connections = state.connections.filter(c => c.id !== action.payload);
     },
     selectShape: (state, action: PayloadAction<string | null>) => {
       state.selectedShapeId = action.payload;
@@ -80,6 +102,9 @@ export const {
   selectShape,
   setCanvasSize,
   clearCanvas,
+  setActiveTool,
+  addConnection,
+  removeConnection,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;
