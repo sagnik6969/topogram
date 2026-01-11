@@ -1,8 +1,10 @@
 from typing import Dict, List, Any, TypedDict
 from collections import deque
-from config.settings import settings
+from app.config.settings import settings
 import httpx
 from uuid import uuid4
+from app.exceptions.diagrams import MermaidConversionError
+from app.constants.diagrams import mermaid_to_excalidraw_shape_map
 
 
 class DiagramType(TypedDict):
@@ -44,14 +46,16 @@ class DiagramService:
                     level_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT + 100)
                     + 50
                 )
-                excalidraw_elements = self.convert_graph_node_to_excalidraw_elements(
-                    node,
-                    x,
-                    y,
-                    settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT,
-                    settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH,
+                excalidraw_elements_in_current_step = (
+                    self.convert_graph_node_to_excalidraw_elements(
+                        node,
+                        x,
+                        y,
+                        settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT,
+                        settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH,
+                    )
                 )
-                excalidraw_elements.extend(excalidraw_elements)
+                excalidraw_elements.extend(excalidraw_elements_in_current_step)
 
         return {
             "type": "excalidraw",
@@ -71,10 +75,16 @@ class DiagramService:
     async def convert_mermaid_to_json(self, mermaid_code: str) -> Graph:
         url = settings.MERMAID_TO_JSON_SERVICE_ENDPOINT
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json={"mermaid": mermaid_code})
-            response.raise_for_status()
-            graph_json = response.json()
-            return graph_json
+            try:
+                response = await client.post(url, json={"diagram": mermaid_code})
+                response.raise_for_status()
+                graph_json = response.json()
+                return graph_json
+            except httpx.HTTPError as e:
+                raise MermaidConversionError(
+                    response.json() if response else str(e),
+                    response.status_code if response else 500,
+                )
 
     def get_level_order_traversal(
         self, graph: Graph, start_node_id: str
@@ -116,14 +126,15 @@ class DiagramService:
 
         return result
 
-    def convert_graph_node_to_excalidraw_elements(
-        node: Node, x: int, y: int, height: int, width: int
-    ) -> list[dict]:
-        # Placeholder for actual conversion logic
+    def map_mermaid_shape_to_excalidraw(self, mermaid_shape: str) -> str:
+        return mermaid_to_excalidraw_shape_map.get(mermaid_shape, "rectangle")
 
+    def convert_graph_node_to_excalidraw_elements(
+        self, node: Node, x: int, y: int, height: int, width: int
+    ) -> list[dict]:
         shape = {
             "id": node["id"],
-            "type": node["shape"],
+            "type": self.map_mermaid_shape_to_excalidraw(node["shape"]),
             "x": x,
             "y": y,
             "width": width,
@@ -163,44 +174,42 @@ class DiagramService:
             text_element_x = x + width / 2 - text_element_width / 2
             text_element_y = y + height / 2 - text_element_height / 2
             shape["boundElements"] = [{"type": "text", "id": text_element_id}]
-            text = (
-                {
-                    "id": text_element_id,
-                    "type": "text",
-                    "x": text_element_x,
-                    "y": text_element_y,
-                    "width": text_element_width,
-                    "height": text_element_height,
-                    "angle": 0,
-                    "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
-                    "backgroundColor": "transparent",
-                    "fillStyle": "solid",
-                    "strokeWidth": 2,
-                    "strokeStyle": "solid",
-                    "roughness": 1,
-                    "opacity": 100,
-                    "groupIds": [],
-                    "frameId": None,
-                    "index": "a1",
-                    "roundness": None,
-                    "seed": 1644561560,
-                    "version": 8,
-                    "versionNonce": 1166842264,
-                    "isDeleted": False,
-                    "boundElements": None,
-                    "updated": 1768110277987,
-                    "link": None,
-                    "locked": False,
-                    "text": node["label"],
-                    "fontSize": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE,
-                    "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
-                    "textAlign": "center",
-                    "verticalAlign": "middle",
-                    "containerId": node["id"],
-                    "originalText": node["label"],
-                    "autoResize": True,
-                    "lineHeight": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT,
-                },
-            )
+            text = {
+                "id": text_element_id,
+                "type": "text",
+                "x": text_element_x,
+                "y": text_element_y,
+                "width": text_element_width,
+                "height": text_element_height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 1,
+                "opacity": 100,
+                "groupIds": [],
+                "frameId": None,
+                "index": "a1",
+                "roundness": None,
+                "seed": 1644561560,
+                "version": 8,
+                "versionNonce": 1166842264,
+                "isDeleted": False,
+                "boundElements": None,
+                "updated": 1768110277987,
+                "link": None,
+                "locked": False,
+                "text": node["label"],
+                "fontSize": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE,
+                "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
+                "textAlign": "center",
+                "verticalAlign": "middle",
+                "containerId": node["id"],
+                "originalText": node["label"],
+                "autoResize": True,
+                "lineHeight": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT,
+            }
             return [shape, text]
         return [shape]

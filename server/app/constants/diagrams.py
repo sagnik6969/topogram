@@ -1,0 +1,15 @@
+mermaid_to_excalidraw_shape_map = {
+    "rectangle": "rectangle",
+    "rounded_rectangle": "rectangle",
+    "stadium": "rectangle",
+    "subroutine": "rectangle",
+    "cylinder": "rectangle",
+    "group": "rectangle",
+    "circle": "ellipse",
+    "ellipse": "ellipse",
+    "diamond": "diamond",
+    "hexagon": "rectangle",
+    "parallelogram": "rectangle",
+    "trapezoid": "rectangle",
+    "double_circle": "ellipse",
+}

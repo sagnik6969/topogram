@@ -1,12 +1,20 @@
-from fastapi import FastAPI
-
+from fastapi import FastAPI, HTTPException
+from app.api.v1 import router as v1_router
+from app.exceptions.diagrams import MermaidConversionError
 
 app = FastAPI()
+
+app.include_router(v1_router)
 
 
 @app.get("/health")
 async def read_root():
     return {"status": "ok"}
+
+
+@app.exception_handler(MermaidConversionError)
+async def mermaid_conversion_error_handler(request, exc: MermaidConversionError):
+    raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
 
 if __name__ == "__main__":
