@@ -35,7 +35,38 @@ class DiagramService:
             start_node_id=list(converted_mermaid_json["nodes"].keys())[0],
         )
 
-        return level_order_traversal
+        excalidraw_elements = []
+
+        for level_index, level in enumerate(level_order_traversal):
+            for node_index, node in enumerate(level):
+                x = node_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH + 50) + 50
+                y = (
+                    level_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT + 100)
+                    + 50
+                )
+                excalidraw_elements = self.convert_graph_node_to_excalidraw_elements(
+                    node,
+                    x,
+                    y,
+                    settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT,
+                    settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH,
+                )
+                excalidraw_elements.extend(excalidraw_elements)
+
+        return {
+            "type": "excalidraw",
+            "version": 2,
+            "source": "http://localhost:5173",
+            "elements": excalidraw_elements,
+            "appState": {
+                "gridSize": 20,
+                "gridStep": 5,
+                "gridModeEnabled": False,
+                "viewBackgroundColor": "#ffffff",
+                "lockedMultiSelections": {},
+            },
+            "files": {},
+        }
 
     async def convert_mermaid_to_json(self, mermaid_code: str) -> Graph:
         url = settings.MERMAID_TO_JSON_SERVICE_ENDPOINT
