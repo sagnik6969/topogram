@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { parseMermaid, renderJson } from "@rendermaid/core";
-import ELK from "elkjs/lib/elk.bundled.js";
+import { AppError } from "../utils/AppError.js";
+import { renderGraphUsingELK } from "../services/graphRenderer.js";
+import { convertMermaidToJson } from "../services/mermaidToJsonConverter.js";
 
 export const renderGraph = async (
   req: Request,
@@ -14,11 +15,15 @@ export const renderGraph = async (
 
     const { jsonGraph } = req.body;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const elk = new (ELK as any)();
-    const renderedGraph = await elk.layout(jsonGraph);
-    res.json(renderedGraph);
+    const renderedGraph = await renderGraphUsingELK(jsonGraph);
+
+    res.status(200).json(renderedGraph);
   } catch (error) {
+    if (error instanceof AppError) {
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, details: error.details });
+    }
     console.error("Error rendering graph from JSON:", error);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -34,39 +39,15 @@ export const convertToJSON = (req: Request, res: Response): void => {
     }
 
     // Parse the diagram
-    const parseResult = parseMermaid(diagram);
+    const parseResult = convertMermaidToJson(diagram);
 
-    if (!parseResult.success) {
-      res.status(400).json({
-        error: "Failed to parse mermaid diagram",
-        details: parseResult,
-      });
-      return;
-    }
-
-    // Render to JSON
-    const jsonResult = renderJson(parseResult.data, {
-      pretty: true,
-      includeMetadata: true,
-    });
-
-    if (jsonResult.success) {
-      try {
-        const parsedData =
-          typeof jsonResult.data === "string"
-            ? JSON.parse(jsonResult.data)
-            : jsonResult.data;
-        res.json(parsedData);
-      } catch (e) {
-        res.json({ status: "success", result: jsonResult.data });
-      }
-    } else {
-      res.status(500).json({
-        error: "Failed to render JSON",
-        details: jsonResult,
-      });
-    }
+    res.status(200).json(parseResult);
   } catch (error) {
+    if (error instanceof AppError) {
+      res
+        .status(error.statusCode)
+        .json({ error: error.message, details: error.details });
+    }
     console.error("Error converting mermaid to JSON:", error);
     res.status(500).json({ error: "Internal server error" });
   }
