@@ -129,6 +129,150 @@ class DiagramService:
     def map_mermaid_shape_to_excalidraw(self, mermaid_shape: str) -> str:
         return mermaid_to_excalidraw_shape_map.get(mermaid_shape, "rectangle")
 
+    def _convert_elk_elements_to_excalidraw_elements(
+        self, elk_elements: list[dict], parent_x: float = 0, parent_y: float = 0
+    ) -> list[dict]:
+        excalidraw_elements = []
+
+        for elk_element in elk_elements:
+            if "offset" in elk_element:
+                x = elk_element["offset"]["posX"]
+                y = elk_element["offset"]["posY"]
+            else:
+                x = parent_x + elk_element.get("x", 0)
+                y = parent_y + elk_element.get("y", 0)
+
+            width = elk_element.get("width", 0)
+            height = elk_element.get("height", 0)
+            node = {
+                "id": elk_element["id"],
+                "label": None,
+                "shape": "rectangle",
+            }
+            excalidraw_elements_in_current_step = (
+                self.convert_graph_node_to_excalidraw_elements(
+                    node, x, y, height, width
+                )
+            )
+            excalidraw_elements.extend(excalidraw_elements_in_current_step)
+
+            child_elements = elk_element.get("children", [])
+            if child_elements:
+                excalidraw_elements.extend(
+                    self._convert_elk_elements_to_excalidraw_elements(
+                        child_elements, x, y
+                    )
+                )
+        return excalidraw_elements
+
+    def _convert_elk_edges_to_excalidraw_elements(
+        self, elk_edges: list[dict]
+    ) -> list[dict]:
+        excalidraw_edges = []
+        for edge in elk_edges:
+            raw_points = edge.get("points", [])
+            if not raw_points and "sections" in edge:
+                for section in edge.get("sections", []):
+                    raw_points.append(section["startPoint"])
+                    raw_points.extend(section.get("bendPoints", []))
+                    raw_points.append(section["endPoint"])
+
+            if not raw_points:
+                continue
+
+            start_point = raw_points[0]
+            start_x = start_point["x"]
+            start_y = start_point["y"]
+
+            processed_points = [
+                [p["x"] - start_x, p["y"] - start_y] for p in raw_points
+            ]
+
+            xs = [p[0] for p in processed_points]
+            ys = [p[1] for p in processed_points]
+            width = max(xs) - min(xs)
+            height = max(ys) - min(ys)
+
+            edge_data = edge.get("edgeData", {})
+            end_arrowhead = (
+                "arrow" if edge_data.get("arrowTypeEnd") == "arrow_point" else None
+            )
+
+            excalidraw_edge = {
+                "id": edge.get("id", str(uuid4())),
+                "type": "arrow",
+                "x": start_x,
+                "y": start_y,
+                "width": width,
+                "height": height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 1,
+                "opacity": 100,
+                "groupIds": [],
+                "frameId": None,
+                "roundness": None,
+                "seed": 2052841052,
+                "version": 1,
+                "versionNonce": 0,
+                "isDeleted": False,
+                "boundElements": None,
+                "updated": 1768666473949,
+                "link": None,
+                "locked": False,
+                "points": processed_points,
+                "startBinding": None,
+                "endBinding": None,
+                "startArrowhead": None,
+                "endArrowhead": end_arrowhead,
+                "elbowed": True,
+            }
+
+            if edge.get("sources"):
+                excalidraw_edge["startBinding"] = {
+                    "elementId": edge["sources"][0],
+                    "mode": "orbit",
+                    "fixedPoint": None,
+                }
+
+            if edge.get("targets"):
+                excalidraw_edge["endBinding"] = {
+                    "elementId": edge["targets"][0],
+                    "mode": "orbit",
+                    "fixedPoint": None,
+                }
+
+            excalidraw_edges.append(excalidraw_edge)
+
+        return excalidraw_edges
+
+    def convert_elk_json_to_excalidraw(self, elk_json: dict) -> dict:
+        excalidraw_elements = self._convert_elk_elements_to_excalidraw_elements(
+            elk_json.get("children", [])
+        )
+        excalidraw_elements.extend(
+            self._convert_elk_edges_to_excalidraw_elements(elk_json.get("edges", []))
+        )
+
+        return {
+            "type": "excalidraw",
+            "version": 2,
+            "source": "http://localhost:5173",
+            "elements": excalidraw_elements,
+            "appState": {
+                "gridSize": 20,
+                "gridStep": 5,
+                "gridModeEnabled": False,
+                "viewBackgroundColor": "#ffffff",
+                "lockedMultiSelections": {},
+            },
+            "files": {},
+        }
+
     def convert_graph_node_to_excalidraw_elements(
         self, node: Node, x: int, y: int, height: int, width: int
     ) -> list[dict]:
