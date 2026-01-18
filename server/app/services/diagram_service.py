@@ -1,11 +1,6 @@
 from typing import Dict, List, Any, TypedDict
-from collections import deque
-import math
 from app.config.settings import settings
-import httpx
 from uuid import uuid4
-from app.exceptions.diagrams import MermaidConversionError
-from app.constants.diagrams import mermaid_to_excalidraw_shape_map
 from app.agents.elk_input_graph_generator_agent.agent import (
     agent as elk_input_graph_generator_agent,
 )
@@ -35,105 +30,6 @@ class Graph(TypedDict):
 
 
 class DiagramService:
-    async def convert_mermaid_to_excalidraw(self, mermaid_code: str) -> dict:
-        converted_mermaid_json = await self.convert_mermaid_to_json(mermaid_code)
-        level_order_traversal = self.get_level_order_traversal(
-            converted_mermaid_json,
-            start_node_id=list(converted_mermaid_json["nodes"].keys())[0],
-        )
-
-        excalidraw_elements = []
-
-        for level_index, level in enumerate(level_order_traversal):
-            for node_index, node in enumerate(level):
-                x = node_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH + 50) + 50
-                y = (
-                    level_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT + 100)
-                    + 50
-                )
-                excalidraw_elements_in_current_step = (
-                    self.convert_graph_node_to_excalidraw_elements(
-                        node,
-                        x,
-                        y,
-                        settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT,
-                        settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH,
-                    )
-                )
-                excalidraw_elements.extend(excalidraw_elements_in_current_step)
-
-        return {
-            "type": "excalidraw",
-            "version": 2,
-            "source": "http://localhost:5173",
-            "elements": excalidraw_elements,
-            "appState": {
-                "gridSize": 20,
-                "gridStep": 5,
-                "gridModeEnabled": False,
-                "viewBackgroundColor": "#ffffff",
-                "lockedMultiSelections": {},
-            },
-            "files": {},
-        }
-
-    async def convert_mermaid_to_json(self, mermaid_code: str) -> Graph:
-        url = settings.MERMAID_TO_JSON_SERVICE_ENDPOINT
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(url, json={"diagram": mermaid_code})
-                response.raise_for_status()
-                graph_json = response.json()
-                return graph_json
-            except httpx.HTTPError as e:
-                raise MermaidConversionError(
-                    response.json() if response else str(e),
-                    response.status_code if response else 500,
-                )
-
-    def get_level_order_traversal(
-        self, graph: Graph, start_node_id: str
-    ) -> List[List[Node]]:
-        if not graph or not start_node_id:
-            return []
-
-        nodes = graph.get("nodes", {})
-        edges = graph.get("edges", [])
-
-        # Build adjacency list
-        adj = {}
-        for edge in edges:
-            u, v = edge.get("from"), edge.get("to")
-            if u and v:
-                if u not in adj:
-                    adj[u] = []
-                adj[u].append(v)
-
-        queue = deque([(start_node_id, 0)])
-        visited = {start_node_id}
-        result = []
-
-        while queue:
-            node_id, level = queue.popleft()
-
-            # Ensure result list is large enough
-            if len(result) <= level:
-                result.append([])
-
-            if node_id in nodes:
-                result[level].append(nodes[node_id])
-
-            if node_id in adj:
-                for neighbor in adj[node_id]:
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append((neighbor, level + 1))
-
-        return result
-
-    def map_mermaid_shape_to_excalidraw(self, mermaid_shape: str) -> str:
-        return mermaid_to_excalidraw_shape_map.get(mermaid_shape, "rectangle")
-
     def _convert_elk_elements_to_excalidraw_elements(
         self, elk_elements: list[dict], parent_x: float = 0, parent_y: float = 0
     ) -> list[dict]:
@@ -402,7 +298,7 @@ class DiagramService:
                 # 2. For each leaf node add its height and width.
                 icon_dim = 128
                 text = node.get("text")
-                
+
                 width = icon_dim
                 height = icon_dim
 
@@ -415,18 +311,20 @@ class DiagramService:
                         * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO
                     )
                     # avoid division by zero
-                    chars_per_line = int(max_width / char_width) if char_width > 0 else 1
-                    
+                    chars_per_line = (
+                        int(max_width / char_width) if char_width > 0 else 1
+                    )
+
                     words = text.split()
                     lines = []
                     current_line = []
                     current_length = 0
-                    
+
                     for word in words:
                         word_len = len(word)
                         # space needed if not first word
                         needed = word_len + (1 if current_line else 0)
-                        
+
                         if current_length + needed <= chars_per_line:
                             current_line.append(word)
                             current_length += needed
@@ -435,20 +333,20 @@ class DiagramService:
                                 lines.append(" ".join(current_line))
                             current_line = [word]
                             current_length = word_len
-                            
+
                     if current_line:
                         lines.append(" ".join(current_line))
-                    
+
                     # Update text to include \n
                     node["text"] = "\n".join(lines)
                     num_lines = len(lines)
-                    
+
                     text_height = (
                         num_lines
                         * font_size
                         * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
                     )
-                    
+
                     height += text_height
 
                 # Add padding to dimensions as well
