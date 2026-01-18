@@ -11,10 +11,13 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Load icons eagerly as URLs using Vite's glob import
-  const iconsGlob = import.meta.glob("./assets/aws-icons/**/*.{svg,png,jpg,jpeg}", {
-    eager: true,
-    import: "default",
-  });
+  const iconsGlob = import.meta.glob(
+    "./assets/aws-icons/**/*.{svg,png,jpg,jpeg}",
+    {
+      eager: true,
+      import: "default",
+    },
+  );
 
   const icons: IconItem[] = useMemo(() => {
     return Object.entries(iconsGlob).map(([path, url]) => {
@@ -48,64 +51,64 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
     try {
       const response = await fetch(icon.url);
       const blob = await response.blob();
-      
+
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onloadend = () => {
         const base64data = reader.result as string;
-        
+
         const fileId = Math.random().toString(36).substring(2, 15);
         const elementId = Math.random().toString(36).substring(2, 15);
 
         const appState = excalidrawAPI.getAppState();
         const { scrollX, scrollY, width, height, zoom } = appState;
-        
+
         // Center the new image in the viewport
-        const sceneX = (width / 2) / zoom.value - scrollX - 32;
-        const sceneY = (height / 2) / zoom.value - scrollY - 32;
+        const sceneX = width / 2 / zoom.value - scrollX - 32;
+        const sceneY = height / 2 / zoom.value - scrollY - 32;
 
         const file = {
-            id: fileId,
-            mimeType: blob.type || "image/svg+xml", // Fallback if type is missing
-            dataURL: base64data,
-            created: Date.now(),
-            lastRetrieved: Date.now()
+          id: fileId,
+          mimeType: blob.type || "image/svg+xml", // Fallback if type is missing
+          dataURL: base64data,
+          created: Date.now(),
+          lastRetrieved: Date.now(),
         };
 
         const imageElement = {
-            id: elementId,
-            type: "image",
-            x: sceneX,
-            y: sceneY,
-            width: 64, 
-            height: 64,
-            angle: 0,
-            strokeColor: "transparent",
-            backgroundColor: "transparent",
-            fillStyle: "hachure",
-            strokeWidth: 1,
-            strokeStyle: "solid",
-            roughness: 1,
-            opacity: 100,
-            groupIds: [],
-            frameId: null,
-            roundness: null,
-            seed: Math.floor(Math.random() * 100000),
-            version: 1,
-            versionNonce: 0,
-            isDeleted: false,
-            boundElements: null,
-            updated: Date.now(),
-            link: null,
-            locked: false,
-            fileId: fileId,
-            scale: [1, 1],
-            status: "saved",
+          id: elementId,
+          type: "image",
+          x: sceneX,
+          y: sceneY,
+          width: 64,
+          height: 64,
+          angle: 0,
+          strokeColor: "transparent",
+          backgroundColor: "transparent",
+          fillStyle: "hachure",
+          strokeWidth: 1,
+          strokeStyle: "solid",
+          roughness: 1,
+          opacity: 100,
+          groupIds: [],
+          frameId: null,
+          roundness: null,
+          seed: Math.floor(Math.random() * 100000),
+          version: 1,
+          versionNonce: 0,
+          isDeleted: false,
+          boundElements: null,
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          fileId: fileId,
+          scale: [1, 1],
+          status: "saved",
         };
 
         excalidrawAPI.addFiles([file]);
         excalidrawAPI.updateScene({
-            elements: [...excalidrawAPI.getSceneElements(), imageElement],
+          elements: [...excalidrawAPI.getSceneElements(), imageElement],
         });
       };
     } catch (err) {
@@ -114,11 +117,19 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
   };
 
   return (
-    <Sidebar name="aws-icons" className="custom-sidebar">
+    <Sidebar name="aws-icons" className="custom-sidebar" docked={true}>
       <Sidebar.Header>
-         <h3 style={{ margin: 0, padding: "0.5rem" }}>AWS Icons</h3>
+        <h3 style={{ margin: 0, padding: "0.5rem" }}>AWS Icons</h3>
       </Sidebar.Header>
-      <div style={{ display: "flex", flexDirection: "column", padding: "0.5rem", height: "100%", boxSizing: "border-box" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          padding: "0.5rem",
+          height: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         <input
           type="text"
           placeholder="Search icons..."
@@ -130,10 +141,20 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             borderRadius: "4px",
             border: "1px solid #ccc",
             width: "100%",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
           }}
         />
-        <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", alignContent: "start", paddingBottom: "20px" }}>
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "8px",
+            alignContent: "start",
+            paddingBottom: "20px",
+          }}
+        >
           {filteredIcons.map((icon) => (
             <div
               key={icon.path}
@@ -148,19 +169,30 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
                 alignItems: "center",
                 justifyContent: "center",
                 aspectRatio: "1/1",
-                backgroundColor: "#fff"
+                backgroundColor: "#fff",
               }}
             >
-              <img 
-                src={icon.url} 
-                alt={icon.name} 
-                style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} 
+              <img
+                src={icon.url}
+                alt={icon.name}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                }}
               />
             </div>
           ))}
           {filteredIcons.length === 0 && (
-            <div style={{gridColumn: "1/-1", textAlign: "center", color: "#666", marginTop: "20px"}}>
-                No icons found
+            <div
+              style={{
+                gridColumn: "1/-1",
+                textAlign: "center",
+                color: "#666",
+                marginTop: "20px",
+              }}
+            >
+              No icons found
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 
 import "./App.css";
@@ -20,29 +20,7 @@ function App() {
       <Excalidraw
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
         renderTopRightUI={() => (
-          <button
-            style={{
-              border: "1px solid #ced4da",
-              borderRadius: "4px",
-              padding: "0.5rem 1rem",
-              cursor: "pointer",
-              height: "2.5rem",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#404040",
-              color: "white",
-            }}
-            onClick={() => {
-              excalidrawAPI?.updateScene({
-                appState: { openSidebar: { name: "aws-icons" } },
-              });
-            }}
-          >
-            AWS Icons
-          </button>
+          <Sidebar.Trigger name="aws-icons">AWS Icons</Sidebar.Trigger>
         )}
       >
         <CustomSidebar excalidrawAPI={excalidrawAPI} />
