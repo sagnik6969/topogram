@@ -31,10 +31,10 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
         .replace(/_48$/, "")
         .replace(/_32$/, "")
         .replace(/_16$/, "");
-      
+
       // Replace separators with spaces
       name = name.replace(/[_-]/g, " ");
-      
+
       return {
         path,
         url: url as string,
@@ -55,12 +55,12 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
     try {
       const response = await fetch(icon.url);
       const blob = await response.blob();
-      
+
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onloadend = () => {
         const base64data = reader.result as string;
-        
+
         const fileId = Math.random().toString(36).substring(2, 15);
         const imageId = Math.random().toString(36).substring(2, 15);
         const textId = Math.random().toString(36).substring(2, 15);
@@ -68,48 +68,48 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
 
         const appState = excalidrawAPI.getAppState();
         const { scrollX, scrollY, width, height, zoom } = appState;
-        
+
         // Center the new image in the viewport
-        const sceneX = (width / 2) / zoom.value - scrollX - 32;
-        const sceneY = (height / 2) / zoom.value - scrollY - 32;
+        const sceneX = width / 2 / zoom.value - scrollX - 32;
+        const sceneY = height / 2 / zoom.value - scrollY - 32;
 
         const file = {
-            id: fileId,
-            mimeType: blob.type || "image/svg+xml",
-            dataURL: base64data,
-            created: Date.now(),
-            lastRetrieved: Date.now()
+          id: fileId,
+          mimeType: blob.type || "image/svg+xml",
+          dataURL: base64data,
+          created: Date.now(),
+          lastRetrieved: Date.now(),
         };
 
         const imageElement = {
-            id: imageId,
-            type: "image",
-            x: sceneX,
-            y: sceneY,
-            width: 64, 
-            height: 64,
-            angle: 0,
-            strokeColor: "transparent",
-            backgroundColor: "transparent",
-            fillStyle: "hachure",
-            strokeWidth: 1,
-            strokeStyle: "solid",
-            roughness: 1,
-            opacity: 100,
-            groupIds: [groupId],
-            frameId: null,
-            roundness: null,
-            seed: Math.floor(Math.random() * 100000),
-            version: 1,
-            versionNonce: 0,
-            isDeleted: false,
-            boundElements: null,
-            updated: Date.now(),
-            link: null,
-            locked: false,
-            fileId: fileId,
-            scale: [1, 1],
-            status: "saved",
+          id: imageId,
+          type: "image",
+          x: sceneX,
+          y: sceneY,
+          width: 128,
+          height: 128,
+          angle: 0,
+          strokeColor: "transparent",
+          backgroundColor: "transparent",
+          fillStyle: "hachure",
+          strokeWidth: 1,
+          strokeStyle: "solid",
+          roughness: 1,
+          opacity: 100,
+          groupIds: [groupId],
+          frameId: null,
+          roundness: null,
+          seed: Math.floor(Math.random() * 100000),
+          version: 1,
+          versionNonce: 0,
+          isDeleted: false,
+          boundElements: null,
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          fileId: fileId,
+          scale: [1, 1],
+          status: "saved",
         };
 
         // Helper to wrap text
@@ -131,64 +131,68 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
         };
 
         const wrappedText = wrapText(icon.name, 15); // Wrap at ~15 chars
-        
+
         // Font settings for Nunito (Sans-serif = 2)
         const fontSize = 16;
         const fontFamily = 2; // Normal (Helvetica/Sans-serif -> mapped to Nunito in CSS)
         const lineHeight = 1.25;
-        
+
         // Measure text with wrapped lines
         const lines = wrappedText.split("\n");
-        const maxLineLength = Math.max(...lines.map(l => l.length));
+        const maxLineLength = Math.max(...lines.map((l) => l.length));
         const numberOfLines = lines.length;
-        
+
         const charWidth = fontSize * 0.55; // Approximation for Sans-serif
         const textWidth = Math.max(maxLineLength * charWidth, 20);
         const textHeight = fontSize * lineHeight * numberOfLines;
-        
-        const textX = sceneX + 32 - (textWidth / 2); // Center text below image
+
+        const textX = sceneX + 64 - textWidth / 2; // Center text below image
 
         const textElement = {
-            id: textId,
-            type: "text",
-            x: textX,
-            y: sceneY + 70,
-            width: textWidth,
-            height: textHeight,
-            angle: 0,
-            strokeColor: "#1e1e1e",
-            backgroundColor: "transparent",
-            fillStyle: "hachure",
-            strokeWidth: 1,
-            strokeStyle: "solid",
-            roughness: 1,
-            opacity: 100,
-            groupIds: [groupId],
-            frameId: null,
-            roundness: null,
-            seed: Math.floor(Math.random() * 100000),
-            version: 1,
-            versionNonce: 0,
-            isDeleted: false,
-            boundElements: null,
-            updated: Date.now(),
-            link: null,
-            locked: false,
-            text: wrappedText,
-            fontSize: fontSize,
-            fontFamily: fontFamily,
-            textAlign: "center",
-            verticalAlign: "top",
-            baseline: 14,
-            containerId: null,
-            originalText: wrappedText,
-            lineHeight: lineHeight,
-            status: "saved",
+          id: textId,
+          type: "text",
+          x: textX,
+          y: sceneY + 134,
+          width: textWidth,
+          height: textHeight,
+          angle: 0,
+          strokeColor: "#1e1e1e",
+          backgroundColor: "transparent",
+          fillStyle: "hachure",
+          strokeWidth: 1,
+          strokeStyle: "solid",
+          roughness: 1,
+          opacity: 100,
+          groupIds: [groupId],
+          frameId: null,
+          roundness: null,
+          seed: Math.floor(Math.random() * 100000),
+          version: 1,
+          versionNonce: 0,
+          isDeleted: false,
+          boundElements: null,
+          updated: Date.now(),
+          link: null,
+          locked: false,
+          text: wrappedText,
+          fontSize: fontSize,
+          fontFamily: fontFamily,
+          textAlign: "center",
+          verticalAlign: "top",
+          baseline: 14,
+          containerId: null,
+          originalText: wrappedText,
+          lineHeight: lineHeight,
+          status: "saved",
         };
 
         excalidrawAPI.addFiles([file]);
         excalidrawAPI.updateScene({
-            elements: [...excalidrawAPI.getSceneElements(), imageElement, textElement],
+          elements: [
+            ...excalidrawAPI.getSceneElements(),
+            imageElement,
+            textElement,
+          ],
         });
       };
     } catch (err) {
@@ -199,9 +203,17 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
   return (
     <Sidebar name="aws-icons" className="custom-sidebar" docked={true}>
       <Sidebar.Header>
-         <h3 style={{ margin: 0, padding: "0.5rem" }}>AWS Icons</h3>
+        <h3 style={{ margin: 0, padding: "0.5rem" }}>AWS Icons</h3>
       </Sidebar.Header>
-      <div style={{ display: "flex", flexDirection: "column", padding: "0.5rem", height: "100%", boxSizing: "border-box" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          padding: "0.5rem",
+          height: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         <input
           type="text"
           placeholder="Search icons..."
@@ -213,10 +225,20 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             borderRadius: "4px",
             border: "1px solid #ccc",
             width: "100%",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
           }}
         />
-        <div style={{ flex: 1, overflowY: "auto", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", alignContent: "start", paddingBottom: "20px" }}>
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "10px",
+            alignContent: "start",
+            paddingBottom: "20px",
+          }}
+        >
           {filteredIcons.map((icon) => (
             <div
               key={icon.path}
@@ -234,17 +256,38 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
                 gap: "5px",
                 backgroundColor: "#fff",
                 height: "auto",
-                minHeight: "100px"
+                minHeight: "100px",
               }}
             >
-              <div style={{ width: "48px", height: "48px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img 
-                  src={icon.url} 
-                  alt={icon.name} 
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} 
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <img
+                  src={icon.url}
+                  alt={icon.name}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "contain",
+                  }}
                 />
               </div>
-              <span style={{ fontSize: "10px", textAlign: "center", wordBreak: "break-word", lineHeight: "1.2" }}>{icon.name}</span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  textAlign: "center",
+                  wordBreak: "break-word",
+                  lineHeight: "1.2",
+                }}
+              >
+                {icon.name}
+              </span>
             </div>
           ))}
           {filteredIcons.length === 0 && (
