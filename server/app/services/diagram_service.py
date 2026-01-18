@@ -5,6 +5,10 @@ import httpx
 from uuid import uuid4
 from app.exceptions.diagrams import MermaidConversionError
 from app.constants.diagrams import mermaid_to_excalidraw_shape_map
+from app.agents.elk_input_graph_generator_agent.agent import (
+    agent as elk_input_graph_generator_agent,
+)
+from app.agents.elk_input_graph_generator_agent.schemas import Graph as PartialElkGraph
 
 
 class DiagramType(TypedDict):
@@ -357,3 +361,8 @@ class DiagramService:
             }
             return [shape, text]
         return [shape]
+
+    def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
+        agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(prompt)
+        agent_response_dict = agent_response.model_dump(mode="json")
+        return agent_response_dict
