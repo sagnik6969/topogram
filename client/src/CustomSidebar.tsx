@@ -112,12 +112,40 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             status: "saved",
         };
 
-        // Estimate text width better
+        // Helper to wrap text
+        const wrapText = (str: string, maxChars: number) => {
+          const words = str.split(" ");
+          const lines: string[] = [];
+          let currentLine = words[0];
+
+          for (let i = 1; i < words.length; i++) {
+            if (currentLine.length + 1 + words[i].length <= maxChars) {
+              currentLine += " " + words[i];
+            } else {
+              lines.push(currentLine);
+              currentLine = words[i];
+            }
+          }
+          lines.push(currentLine);
+          return lines.join("\n");
+        };
+
+        const wrappedText = wrapText(icon.name, 15); // Wrap at ~15 chars
+        
+        // Font settings for Nunito (Sans-serif = 2)
         const fontSize = 16;
-        const fontFamily = 1; // Virgil
-        const charWidth = fontSize * 0.6; // Approximation for Virgil
-        const textWidth = Math.max(icon.name.length * charWidth, 20); // minimal width
-        const textHeight = fontSize * 1.5; // Line height approximation
+        const fontFamily = 2; // Normal (Helvetica/Sans-serif -> mapped to Nunito in CSS)
+        const lineHeight = 1.25;
+        
+        // Measure text with wrapped lines
+        const lines = wrappedText.split("\n");
+        const maxLineLength = Math.max(...lines.map(l => l.length));
+        const numberOfLines = lines.length;
+        
+        const charWidth = fontSize * 0.55; // Approximation for Sans-serif
+        const textWidth = Math.max(maxLineLength * charWidth, 20);
+        const textHeight = fontSize * lineHeight * numberOfLines;
+        
         const textX = sceneX + 32 - (textWidth / 2); // Center text below image
 
         const textElement = {
@@ -146,15 +174,15 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             updated: Date.now(),
             link: null,
             locked: false,
-            text: icon.name,
+            text: wrappedText,
             fontSize: fontSize,
             fontFamily: fontFamily,
             textAlign: "center",
             verticalAlign: "top",
-            baseline: 14, // Approximate baseline for 16px font
+            baseline: 14,
             containerId: null,
-            originalText: icon.name,
-            lineHeight: 1.25,
+            originalText: wrappedText,
+            lineHeight: lineHeight,
             status: "saved",
         };
 
