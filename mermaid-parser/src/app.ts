@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 // Routes
-app.use("/apis/v1/mermaid", diagramRoutes);
+app.use("/diagrams", diagramRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

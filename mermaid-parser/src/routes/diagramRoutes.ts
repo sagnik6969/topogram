@@ -1,11 +1,12 @@
 import { Router } from "express";
 import {
-  convertToJSON,
+  convertMermaidToJSON,
   renderGraph,
 } from "../controllers/diagramController.js";
 
 const router = Router();
 
-router.post("/convert", convertToJSON);
-router.post("/render_graph", renderGraph);
+router.post("/convert-mermaid-to-json", convertMermaidToJSON);
+router.post("/render-graph", renderGraph);
+
 export default router;

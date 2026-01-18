@@ -15,7 +15,9 @@
   "dependencies": {
     "@rendermaid/core": "npm:@jsr/rendermaid__core@^0.6.0",
     "elkjs": "^0.11.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsdom": "^27.4.0",
+    "svg-to-excalidraw": "^0.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

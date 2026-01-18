@@ -29,7 +29,7 @@ export const renderGraph = async (
   }
 };
 
-export const convertToJSON = (req: Request, res: Response): void => {
+export const convertMermaidToJSON = (req: Request, res: Response): void => {
   try {
     const { diagram } = req.body;
 
