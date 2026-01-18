@@ -112,18 +112,21 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             status: "saved",
         };
 
-        // Estimate text width (rough approximation: 8px per char for normal font)
-        const charWidth = 8;
-        const textWidth = icon.name.length * charWidth;
+        // Estimate text width better
+        const fontSize = 16;
+        const fontFamily = 1; // Virgil
+        const charWidth = fontSize * 0.6; // Approximation for Virgil
+        const textWidth = Math.max(icon.name.length * charWidth, 20); // minimal width
+        const textHeight = fontSize * 1.5; // Line height approximation
         const textX = sceneX + 32 - (textWidth / 2); // Center text below image
 
         const textElement = {
             id: textId,
             type: "text",
             x: textX,
-            y: sceneY + 70, // 64 height + 6px gap
+            y: sceneY + 70,
             width: textWidth,
-            height: 20,
+            height: textHeight,
             angle: 0,
             strokeColor: "#1e1e1e",
             backgroundColor: "transparent",
@@ -144,13 +147,14 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
             link: null,
             locked: false,
             text: icon.name,
-            fontSize: 16,
-            fontFamily: 1, // Virgil
+            fontSize: fontSize,
+            fontFamily: fontFamily,
             textAlign: "center",
             verticalAlign: "top",
-            baseline: 15,
+            baseline: 14, // Approximate baseline for 16px font
             containerId: null,
             originalText: icon.name,
+            lineHeight: 1.25,
             status: "saved",
         };
 
