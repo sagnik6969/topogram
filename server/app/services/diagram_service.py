@@ -1,5 +1,6 @@
 from typing import Dict, List, Any, TypedDict
 from collections import deque
+import math
 from app.config.settings import settings
 import httpx
 from uuid import uuid4
@@ -365,4 +366,101 @@ class DiagramService:
     def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
         agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(prompt)
         agent_response_dict = agent_response.model_dump(mode="json")
+
+        base_layout_options = {
+            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+            "elk.algorithm": "elk.layered",
+            "nodePlacement.strategy": "BRANDES_KOEPF",
+            "elk.layered.mergeEdges": False,
+            "elk.direction": "RIGHT",
+            "spacing.baseValue": 80,
+            "elk.layered.crossingMinimization.forceNodeModelOrder": False,
+            "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
+            "elk.layered.unnecessaryBendpoints": True,
+            "elk.layered.wrapping.multiEdge.improveCuts": True,
+            "elk.layered.wrapping.multiEdge.improveWrappedEdges": True,
+            "elk.layered.edgeRouting.selfLoopDistribution": "EQUALLY",
+            "elk.layered.mergeHierarchyEdges": True,
+        }
+
+        agent_response_dict["layoutOptions"] = base_layout_options
+
+        def process_node(node: dict):
+            # Check if leaf (no children or empty children list)
+            children = node.get("children")
+            is_leaf = not children
+
+            # 3. Each element should have padding
+            # Remove padding from leaf nodes as per user request
+            padding = 0 if is_leaf else 8
+            node.setdefault("layoutOptions", {})
+            node["layoutOptions"]["elk.padding"] = (
+                f"[top={padding},left={padding},bottom={padding},right={padding}]"
+            )
+
+            if is_leaf:
+                # 2. For each leaf node add its height and width.
+                icon_dim = 128
+                text = node.get("text")
+                
+                width = icon_dim
+                height = icon_dim
+
+                if text:
+                    font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+                    # Text should be wrapped if it goes outside the icon width
+                    max_width = icon_dim
+                    char_width = (
+                        font_size
+                        * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO
+                    )
+                    # avoid division by zero
+                    chars_per_line = int(max_width / char_width) if char_width > 0 else 1
+                    
+                    words = text.split()
+                    lines = []
+                    current_line = []
+                    current_length = 0
+                    
+                    for word in words:
+                        word_len = len(word)
+                        # space needed if not first word
+                        needed = word_len + (1 if current_line else 0)
+                        
+                        if current_length + needed <= chars_per_line:
+                            current_line.append(word)
+                            current_length += needed
+                        else:
+                            if current_line:
+                                lines.append(" ".join(current_line))
+                            current_line = [word]
+                            current_length = word_len
+                            
+                    if current_line:
+                        lines.append(" ".join(current_line))
+                    
+                    # Update text to include \n
+                    node["text"] = "\n".join(lines)
+                    num_lines = len(lines)
+                    
+                    text_height = (
+                        num_lines
+                        * font_size
+                        * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
+                    )
+                    
+                    height += text_height
+
+                # Add padding to dimensions as well
+                node["width"] = width + (2 * padding)
+                node["height"] = height + (2 * padding)
+
+            else:
+                # Recurse
+                for child in children:
+                    process_node(child)
+
+        for node in agent_response_dict.get("nodes", []):
+            process_node(node)
+
         return agent_response_dict

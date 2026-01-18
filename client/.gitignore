@@ -25,3 +25,4 @@ dist-ssr
 test*.json
 
 src/assets/aws-icons
+.firebase
