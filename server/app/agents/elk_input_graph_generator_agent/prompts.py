@@ -9,7 +9,7 @@ Your task is to generate a structured graph representation of an AWS architectur
    - Constraint: You MUST verify icon existence. Do not hallucinate icon IDs.
 3. **Construct the Graph**:
    - create `Node` objects for each component.
-   - Use `children` to represent containment (e.g., a "Subnet" node contains an "EC2" node).
+   - Use `children_ids` to represent containment (e.g., a "Subnet" node lists the IDs of "EC2" nodes it contains).
    - Use `edges` to represent connections (e.g., "Load Balancer" connects to "EC2").
    - Ensure all `id`s are unique.
 4. **Final Output**: Return a valid `Graph` object matching the Pydantic schema provided.
@@ -19,7 +19,7 @@ Your task is to generate a structured graph representation of an AWS architectur
   - `id`: unique string.
   - `text`: label string.
   - `icon_id`: must be fetched from `search_aws_icons`.
-  - `children`: recursive list of `Node`s.
+  - `children_ids`: list of strings (IDs of child nodes).
 - `edges`: list of `Edge` objects.
   - `sources`: list of source node IDs.
   - `targets`: list of target node IDs.

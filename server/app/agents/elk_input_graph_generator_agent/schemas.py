@@ -17,13 +17,13 @@ class Node(BaseModel):
     icon_id: Optional[str] = Field(
         default=None, description="Optional identifier for an icon to be displayed"
     )
-    children: Optional[List[Node]] = Field(
-        default=None,
-        description="List of direct children nodes found inside this node. This structure is recursive.",
-    )  # rebuild the model to update forward references for the recursive 'children' field
+    children_ids: List[str] = Field(
+        default_factory=list,
+        description="List of IDs of direct children nodes found inside this node. The actual child nodes should be listed in the top-level 'nodes' list.",
+    )
 
 
-Node.model_rebuild()
+
 
 
 class Graph(BaseModel):

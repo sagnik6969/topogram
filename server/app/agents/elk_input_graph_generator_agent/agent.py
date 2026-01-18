@@ -5,11 +5,9 @@ from app.agents.elk_input_graph_generator_agent.schemas import Graph
 from app.agents.elk_input_graph_generator_agent.prompts import SYSTEM_PROMPT
 
 
-
 agent = create_agent(
     model=settings.DEFAULT_CHAT_MODEL_NAME,
     tools=[search_aws_icons],
-    verbose=True,
     response_format=Graph,
     system_prompt=SYSTEM_PROMPT,
 )
