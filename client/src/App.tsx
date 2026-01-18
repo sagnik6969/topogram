@@ -1,43 +1,52 @@
 import { useState } from "react";
-import MermaidRenderer from "./MermaidRenderer";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
 import "./App.css";
+import { CustomSidebar } from "./CustomSidebar";
 
 function App() {
-  const [code, setCode] = useState<string>(`%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
-graph TD
-  A[Client] --> B[Load Balancer]
-  B --> C[Server01]
-  B --> D[Server02]
-`);
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden" }}>
-      {/* Editor Section */}
-      <div style={{ width: "50%", padding: "1rem", borderRight: "1px solid #ccc", display: "flex", flexDirection: "column" }}>
-        <h2>Mermaid Editor</h2>
-        <textarea
-          style={{
-            flex: 1,
-            width: "100%",
-            padding: "1rem",
-            fontSize: "16px",
-            fontFamily: "monospace",
-            resize: "none",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-          }}
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-      </div>
-
-      {/* Preview Section */}
-      <div style={{ width: "50%", padding: "1rem", backgroundColor: "#f9f9f9", overflow: "auto" }}>
-        <h2>Preview</h2>
-        <div style={{ border: "1px solid #ccc", borderRadius: "4px", padding: "1rem", backgroundColor: "white", minHeight: "300px" }}>
-          <MermaidRenderer chart={code} />
-        </div>
-      </div>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        width: "100%",
+        overflow: "hidden",
+      }}
+    >
+      <Excalidraw
+        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+        renderTopRightUI={() => (
+          <button
+            style={{
+              border: "1px solid #ced4da",
+              borderRadius: "4px",
+              padding: "0.5rem 1rem",
+              cursor: "pointer",
+              height: "2.5rem",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#404040",
+              color: "white",
+            }}
+            onClick={() => {
+              excalidrawAPI?.updateScene({
+                appState: { openSidebar: { name: "aws-icons" } },
+              });
+            }}
+          >
+            AWS Icons
+          </button>
+        )}
+      >
+        <CustomSidebar excalidrawAPI={excalidrawAPI} />
+      </Excalidraw>
     </div>
   );
 }
