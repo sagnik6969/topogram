@@ -1,6 +1,7 @@
 from typing import Dict, List, Any, TypedDict
 from app.config.settings import settings
 from uuid import uuid4
+import httpx
 from app.agents.elk_input_graph_generator_agent.agent import (
     agent as elk_input_graph_generator_agent,
 )
@@ -282,27 +283,18 @@ class DiagramService:
                 if child_id in node_map:
                     node_map[parent_id]["children"].append(node_map[child_id])
                     non_root_ids.add(child_id)
-        
+
         # Collect roots
-        root_nodes = [
-            node for nid, node in node_map.items() 
-            if nid not in non_root_ids
-        ]
-        
-        return {
-            "id": "root",
-            "children": root_nodes,
-            "edges": edges
-        }
+        root_nodes = [node for nid, node in node_map.items() if nid not in non_root_ids]
+
+        return {"id": "root", "children": root_nodes, "edges": edges}
 
     def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
         agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(
             {"messages": [{"role": "user", "content": prompt}]}
         )
-        graph_dict = agent_response["structured_response"].model_dump(
-            mode="json"
-        )
-        
+        graph_dict = agent_response["structured_response"].model_dump(mode="json")
+
         elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
 
         base_layout_options = {
@@ -404,3 +396,17 @@ class DiagramService:
             process_node(node)
 
         return elk_graph
+
+    def generate_elk_output_json(self, elk_graph: dict) -> dict:
+        with httpx.Client() as client:
+            response = client.post(
+                settings.ELK_SERVICE_ENDPOINT, json={"jsonGraph": elk_graph}
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def generate_excalidraw_from_description(self, description: str) -> dict:
+        elk_input_graph = self.generate_elk_json_input_using_agent(description)
+        elk_output_graph = self.generate_elk_output_json(elk_input_graph)
+        excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
+        return excalidraw_json
