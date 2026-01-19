@@ -206,6 +206,7 @@ class DiagramService:
         elements = []
         icon_id = node.get("icon_id")
         text_content = node.get("text")
+        group_id = str(uuid4())
 
         # 1. Render Icon if available
         if icon_id and icon_id in self.aws_icons:
@@ -223,7 +224,7 @@ class DiagramService:
             image_element = {
                 "id": str(uuid4()),
                 "type": "image",
-                "x": x + (width - 128) / 2,  # Center horizontally (icon is 128x128)
+                "x": x,  # Center horizontally (icon is 128x128)
                 "y": y,  # Top aligned
                 "width": 128,
                 "height": 128,
@@ -235,7 +236,7 @@ class DiagramService:
                 "strokeStyle": "solid",
                 "roughness": 1,
                 "opacity": 100,
-                "groupIds": [],
+                "groupIds": [group_id],
                 "frameId": None,
                 "roundness": None,
                 "seed": 926821016,
@@ -290,16 +291,16 @@ class DiagramService:
             # The user requested specific calculation based on logic:
             # width/height were pre-calculated in process_node.
             # If leaf node (icon present): width ~ 128+padding, height = 128+text_height+padding
-            
+
             # Re-calculate text dimensions to position it
             font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
             line_height = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
-            
+
             # Using the pre-formatted text with newlines from process_node
             lines = text_content.split("\n")
             num_lines = len(lines)
             max_line_chars = max([len(line) for line in lines]) if lines else 0
-            
+
             text_element_width = (
                 max_line_chars
                 * font_size
@@ -308,14 +309,14 @@ class DiagramService:
             text_element_height = num_lines * font_size * line_height
 
             # Center text horizontally
-            text_element_x = x + (width - text_element_width) / 2
-            
+            text_element_x = x
+
             if icon_id:
-                # Place below icon (128px) 
-                text_element_y = y + 128 
+                # Place below icon (128px)
+                text_element_y = y + 128
             else:
                 # Center vertically in the box
-                text_element_y = y + (height - text_element_height) / 2
+                text_element_y = y
 
             text_element = {
                 "id": text_element_id,
@@ -332,7 +333,7 @@ class DiagramService:
                 "strokeStyle": "solid",
                 "roughness": 1,
                 "opacity": 100,
-                "groupIds": [],
+                "groupIds": [group_id],
                 "frameId": None,
                 "index": "a1",
                 "roundness": None,
@@ -349,15 +350,17 @@ class DiagramService:
                 "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
                 "textAlign": "center",
                 "verticalAlign": "middle",
-                "containerId": node["id"] if not icon_id else None, # Only bind if it's inside a container shape
+                "containerId": node["id"]
+                if not icon_id
+                else None,  # Only bind if it's inside a container shape
                 "originalText": text_content,
                 "autoResize": True,
                 "lineHeight": line_height,
             }
-            
+
             # If we created a fallback shape, bind text to it
             if not icon_id and len(elements) > 0:
-                 elements[0]["boundElements"] = [{"type": "text", "id": text_element_id}]
+                elements[0]["boundElements"] = [{"type": "text", "id": text_element_id}]
 
             elements.append(text_element)
 
