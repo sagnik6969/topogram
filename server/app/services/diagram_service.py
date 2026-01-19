@@ -90,12 +90,12 @@ class DiagramService:
     ) -> list[dict]:
         excalidraw_edges = []
         for edge in elk_edges:
-            raw_points = edge.get("points", [])
-            if not raw_points and "sections" in edge:
-                for section in edge.get("sections", []):
-                    raw_points.append(section["startPoint"])
-                    raw_points.extend(section.get("bendPoints", []))
-                    raw_points.append(section["endPoint"])
+            raw_points = []
+
+            for section in edge.get("sections", []):
+                raw_points.append(section["startPoint"])
+                raw_points.extend(section.get("bendPoints", []))
+                raw_points.append(section["endPoint"])
 
             if not raw_points:
                 continue
@@ -113,11 +113,6 @@ class DiagramService:
             width = max(xs) - min(xs)
             height = max(ys) - min(ys)
 
-            edge_data = edge.get("edgeData", {})
-            end_arrowhead = (
-                "arrow" if edge_data.get("arrowTypeEnd") == "arrow_point" else None
-            )
-
             excalidraw_edge = {
                 "id": edge.get("id", str(uuid4())),
                 "type": "arrow",
@@ -131,7 +126,7 @@ class DiagramService:
                 "fillStyle": "solid",
                 "strokeWidth": 2,
                 "strokeStyle": "solid",
-                "roughness": 1,
+                "roughness": 0,
                 "opacity": 100,
                 "groupIds": [],
                 "frameId": None,
@@ -148,7 +143,7 @@ class DiagramService:
                 "startBinding": None,
                 "endBinding": None,
                 "startArrowhead": None,
-                "endArrowhead": end_arrowhead,
+                "endArrowhead": "arrow",
                 "elbowed": True,
             }
 
@@ -234,7 +229,7 @@ class DiagramService:
                 "fillStyle": "hachure",
                 "strokeWidth": 1,
                 "strokeStyle": "solid",
-                "roughness": 1,
+                "roughness": 0,
                 "opacity": 100,
                 "groupIds": [group_id],
                 "frameId": None,
@@ -267,7 +262,7 @@ class DiagramService:
                 "fillStyle": "solid",
                 "strokeWidth": 2,
                 "strokeStyle": "solid",
-                "roughness": 1,
+                "roughness": 0,
                 "opacity": 100,
                 "groupIds": [],
                 "frameId": None,
@@ -331,7 +326,7 @@ class DiagramService:
                 "fillStyle": "solid",
                 "strokeWidth": 2,
                 "strokeStyle": "solid",
-                "roughness": 1,
+                "roughness": 0,
                 "opacity": 100,
                 "groupIds": [group_id],
                 "frameId": None,

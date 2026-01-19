@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from app.api.v1 import router as v1_router
 from app.exceptions.diagrams import MermaidConversionError
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 app = FastAPI(root_path="/main_backend_service")
 
 app.include_router(v1_router)

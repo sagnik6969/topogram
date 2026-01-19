@@ -54,4 +54,4 @@ def search_aws_icons(search_string: str) -> list:
         ):
             results.append({"id": icon.get("id"), "name": icon.get("name")})
 
-    return results
+    return results[:20]
