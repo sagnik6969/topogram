@@ -2,6 +2,8 @@ from typing import Dict, List, Any, TypedDict
 from app.config.settings import settings
 from uuid import uuid4
 import httpx
+import json
+import os
 from app.agents.elk_input_graph_generator_agent.agent import (
     agent as elk_input_graph_generator_agent,
 )
@@ -31,8 +33,23 @@ class Graph(TypedDict):
 
 
 class DiagramService:
+    def __init__(self):
+        base_path = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+        icons_path = os.path.join(base_path, "app", "assets", "aws_icons.json")
+        try:
+            with open(icons_path, "r") as f:
+                self.aws_icons = {icon["id"]: icon for icon in json.load(f)}
+        except Exception:
+            self.aws_icons = {}
+
     def _convert_elk_elements_to_excalidraw_elements(
-        self, elk_elements: list[dict], parent_x: float = 0, parent_y: float = 0
+        self,
+        elk_elements: list[dict],
+        files: dict,
+        parent_x: float = 0,
+        parent_y: float = 0,
     ) -> list[dict]:
         excalidraw_elements = []
 
@@ -48,12 +65,13 @@ class DiagramService:
             height = elk_element.get("height", 0)
             node = {
                 "id": elk_element["id"],
-                "label": None,
+                "text": elk_element.get("text"),
+                "icon_id": elk_element.get("icon_id"),
                 "shape": "rectangle",
             }
             excalidraw_elements_in_current_step = (
                 self.convert_graph_node_to_excalidraw_elements(
-                    node, x, y, height, width
+                    node, x, y, height, width, files
                 )
             )
             excalidraw_elements.extend(excalidraw_elements_in_current_step)
@@ -62,7 +80,7 @@ class DiagramService:
             if child_elements:
                 excalidraw_elements.extend(
                     self._convert_elk_elements_to_excalidraw_elements(
-                        child_elements, x, y
+                        child_elements, files, x, y
                     )
                 )
         return excalidraw_elements
@@ -153,8 +171,9 @@ class DiagramService:
         return excalidraw_edges
 
     def convert_elk_json_to_excalidraw(self, elk_json: dict) -> dict:
+        files = {}
         excalidraw_elements = self._convert_elk_elements_to_excalidraw_elements(
-            elk_json.get("children", [])
+            elk_json.get("children", []), files
         )
         excalidraw_elements.extend(
             self._convert_elk_edges_to_excalidraw_elements(elk_json.get("edges", []))
@@ -172,55 +191,133 @@ class DiagramService:
                 "viewBackgroundColor": "#ffffff",
                 "lockedMultiSelections": {},
             },
-            "files": {},
+            "files": files,
         }
 
     def convert_graph_node_to_excalidraw_elements(
-        self, node: Node, x: int, y: int, height: int, width: int
+        self,
+        node: Node,
+        x: int,
+        y: int,
+        height: int,
+        width: int,
+        files: dict,
     ) -> list[dict]:
-        shape = {
-            "id": node["id"],
-            "type": self.map_mermaid_shape_to_excalidraw(node["shape"]),
-            "x": x,
-            "y": y,
-            "width": width,
-            "height": height,
-            "angle": 0,
-            "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
-            "backgroundColor": "transparent",
-            "fillStyle": "solid",
-            "strokeWidth": 2,
-            "strokeStyle": "solid",
-            "roughness": 1,
-            "opacity": 100,
-            "groupIds": [],
-            "frameId": None,
-            "index": "a0",
-            "roundness": {"type": 3},
-            "seed": 926821016,
-            "version": 66,
-            "versionNonce": 750530792,
-            "isDeleted": False,
-            "updated": 1768110275345,
-            "link": None,
-            "locked": False,
-        }
+        elements = []
+        icon_id = node.get("icon_id")
+        text_content = node.get("text")
 
-        if node["label"]:
+        # 1. Render Icon if available
+        if icon_id and icon_id in self.aws_icons:
+            icon_data = self.aws_icons[icon_id]
+            file_id = str(uuid4())
+            # Excalidraw expects "dataURL" in files
+            files[file_id] = {
+                "id": file_id,
+                "dataURL": icon_data["url"],
+                "mimeType": "image/svg+xml",
+                "created": 1768110275345,  # Dummy timestamp
+                "lastRetrieved": 1768110275345,
+            }
+
+            image_element = {
+                "id": str(uuid4()),
+                "type": "image",
+                "x": x + (width - 128) / 2,  # Center horizontally (icon is 128x128)
+                "y": y,  # Top aligned
+                "width": 128,
+                "height": 128,
+                "angle": 0,
+                "strokeColor": "transparent",
+                "backgroundColor": "transparent",
+                "fillStyle": "hachure",
+                "strokeWidth": 1,
+                "strokeStyle": "solid",
+                "roughness": 1,
+                "opacity": 100,
+                "groupIds": [],
+                "frameId": None,
+                "roundness": None,
+                "seed": 926821016,
+                "version": 66,
+                "versionNonce": 750530792,
+                "isDeleted": False,
+                "boundElements": None,
+                "updated": 1768110275345,
+                "link": None,
+                "locked": False,
+                "fileId": file_id,
+                "status": "saved",
+                "scale": [1, 1],
+            }
+            elements.append(image_element)
+        else:
+            # Fallback shape if no icon
+            shape = {
+                "id": node["id"],
+                "type": "rectangle",
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 1,
+                "opacity": 100,
+                "groupIds": [],
+                "frameId": None,
+                "index": "a0",
+                "roundness": {"type": 3},
+                "seed": 926821016,
+                "version": 66,
+                "versionNonce": 750530792,
+                "isDeleted": False,
+                "updated": 1768110275345,
+                "link": None,
+                "locked": False,
+            }
+            elements.append(shape)
+
+        # 2. Render Text if available
+        if text_content:
             text_element_id = str(uuid4())
+            # For icon nodes, text is below the icon
+            # Start Y for text = y + 128 (icon height) if icon exists, else middle
+            # The user requested specific calculation based on logic:
+            # width/height were pre-calculated in process_node.
+            # If leaf node (icon present): width ~ 128+padding, height = 128+text_height+padding
+            
+            # Re-calculate text dimensions to position it
+            font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+            line_height = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
+            
+            # Using the pre-formatted text with newlines from process_node
+            lines = text_content.split("\n")
+            num_lines = len(lines)
+            max_line_chars = max([len(line) for line in lines]) if lines else 0
+            
             text_element_width = (
-                len(node["label"])
-                * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+                max_line_chars
+                * font_size
                 * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO
             )
-            text_element_height = (
-                settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
-                * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
-            )
-            text_element_x = x + width / 2 - text_element_width / 2
-            text_element_y = y + height / 2 - text_element_height / 2
-            shape["boundElements"] = [{"type": "text", "id": text_element_id}]
-            text = {
+            text_element_height = num_lines * font_size * line_height
+
+            # Center text horizontally
+            text_element_x = x + (width - text_element_width) / 2
+            
+            if icon_id:
+                # Place below icon (128px) 
+                text_element_y = y + 128 
+            else:
+                # Center vertically in the box
+                text_element_y = y + (height - text_element_height) / 2
+
+            text_element = {
                 "id": text_element_id,
                 "type": "text",
                 "x": text_element_x,
@@ -247,18 +344,24 @@ class DiagramService:
                 "updated": 1768110277987,
                 "link": None,
                 "locked": False,
-                "text": node["label"],
-                "fontSize": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE,
+                "text": text_content,
+                "fontSize": font_size,
                 "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
                 "textAlign": "center",
                 "verticalAlign": "middle",
-                "containerId": node["id"],
-                "originalText": node["label"],
+                "containerId": node["id"] if not icon_id else None, # Only bind if it's inside a container shape
+                "originalText": text_content,
                 "autoResize": True,
-                "lineHeight": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT,
+                "lineHeight": line_height,
             }
-            return [shape, text]
-        return [shape]
+            
+            # If we created a fallback shape, bind text to it
+            if not icon_id and len(elements) > 0:
+                 elements[0]["boundElements"] = [{"type": "text", "id": text_element_id}]
+
+            elements.append(text_element)
+
+        return elements
 
     def convert_agent_response_to_elk_json(self, agent_response: dict) -> dict:
         nodes = agent_response.get("nodes", [])
