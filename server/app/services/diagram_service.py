@@ -259,13 +259,51 @@ class DiagramService:
             return [shape, text]
         return [shape]
 
+    def convert_agent_response_to_elk_json(self, agent_response: dict) -> dict:
+        nodes = agent_response.get("nodes", [])
+        edges = agent_response.get("edges", [])
+
+        node_map = {}
+        # First pass: create all nodes
+        for node_data in nodes:
+            node_map[node_data["id"]] = {
+                "id": node_data["id"],
+                "text": node_data.get("text"),
+                "icon_id": node_data.get("icon_id"),
+                "children": [],
+            }
+
+        # Second pass: build hierarchy
+        non_root_ids = set()
+        for node_data in nodes:
+            parent_id = node_data["id"]
+            children_ids = node_data.get("children_ids", [])
+            for child_id in children_ids:
+                if child_id in node_map:
+                    node_map[parent_id]["children"].append(node_map[child_id])
+                    non_root_ids.add(child_id)
+        
+        # Collect roots
+        root_nodes = [
+            node for nid, node in node_map.items() 
+            if nid not in non_root_ids
+        ]
+        
+        return {
+            "id": "root",
+            "children": root_nodes,
+            "edges": edges
+        }
+
     def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
         agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(
             {"messages": [{"role": "user", "content": prompt}]}
         )
-        agent_response_dict = agent_response["structured_response"].model_dump(
+        graph_dict = agent_response["structured_response"].model_dump(
             mode="json"
         )
+        
+        elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
 
         base_layout_options = {
             "elk.hierarchyHandling": "INCLUDE_CHILDREN",
@@ -283,7 +321,7 @@ class DiagramService:
             "elk.layered.mergeHierarchyEdges": True,
         }
 
-        agent_response_dict["layoutOptions"] = base_layout_options
+        elk_graph["layoutOptions"] = base_layout_options
 
         def process_node(node: dict):
             # Check if leaf (no children or empty children list)
@@ -362,7 +400,7 @@ class DiagramService:
                 for child in children:
                     process_node(child)
 
-        for node in agent_response_dict.get("children", []):
+        for node in elk_graph.get("children", []):
             process_node(node)
 
-        return agent_response_dict
+        return elk_graph
