@@ -260,51 +260,12 @@ class DiagramService:
         return [shape]
 
     def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
-        agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke({"messages": [{"role": "user", "content": prompt}]})
-        print(f"DEBUG: agent_response type: {type(agent_response)}")
-        print(f"DEBUG: agent_response keys: {agent_response.keys() if isinstance(agent_response, dict) else 'Not a dict'}")
-        if isinstance(agent_response, dict) and "output" in agent_response:
-             print(f"DEBUG: agent_response['output'] type: {type(agent_response['output'])}")
-        
-        # Determine how to extract the dict
-        if isinstance(agent_response, dict):
-            # Attempt to find the graph data
-            if "output" in agent_response:
-                # If output is the Graph object (unlikely for standard agent, but possible if structured)
-                if hasattr(agent_response["output"], "model_dump"):
-                    agent_response_dict = agent_response["output"].model_dump(mode="json")
-                elif isinstance(agent_response["output"], dict):
-                    agent_response_dict = agent_response["output"]
-                else:
-                    # It might be a string that needs parsing?
-                    # But the previous error INVALID_ARGUMENT was during schema validation, so it probably constructs the object.
-                    # Let's assume for now we just want to see the error.
-                    agent_response_dict = agent_response # Fallback to fail
-            else:
-                 agent_response_dict = agent_response
-        else:
-            agent_response_dict = agent_response.model_dump(mode="json")
-        
-        # Reconstruct hierarchy from flat list of nodes and children_ids
-        nodes_map = {n["id"]: n for n in agent_response_dict.get("nodes", [])}
-        all_child_ids = set()
-        
-        for node in nodes_map.values():
-            if "children_ids" in node:
-                children_ids = node.pop("children_ids")
-                node["children"] = []
-                for child_id in children_ids:
-                    if child_id in nodes_map:
-                        node["children"].append(nodes_map[child_id])
-                        all_child_ids.add(child_id)
-        
-        # Identify root nodes (those that are not children of any other node)
-        root_nodes = [n for id, n in nodes_map.items() if id not in all_child_ids]
-        
-        # Replace 'nodes' with 'children' for ELK format compatibility (top-level nodes are 'children' of the graph)
-        agent_response_dict["children"] = root_nodes
-        if "nodes" in agent_response_dict:
-            del agent_response_dict["nodes"]
+        agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(
+            {"messages": [{"role": "user", "content": prompt}]}
+        )
+        agent_response_dict = agent_response["structured_response"].model_dump(
+            mode="json"
+        )
 
         base_layout_options = {
             "elk.hierarchyHandling": "INCLUDE_CHILDREN",
