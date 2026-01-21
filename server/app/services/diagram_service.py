@@ -86,7 +86,7 @@ class DiagramService:
         return excalidraw_elements
 
     def _convert_elk_edges_to_excalidraw_elements(
-        self, elk_edges: list[dict]
+        self, elk_edges: list[dict], node_map: dict = None
     ) -> list[dict]:
         excalidraw_edges = []
         for edge in elk_edges:
@@ -148,18 +148,50 @@ class DiagramService:
             }
 
             if edge.get("sources"):
-                excalidraw_edge["startBinding"] = {
-                    "elementId": edge["sources"][0],
+                source_id = edge["sources"][0]
+                start_binding = {
+                    "elementId": source_id,
                     "mode": "orbit",
                     "fixedPoint": None,
                 }
 
+                if node_map and source_id in node_map and raw_points:
+                    start_p = raw_points[0]
+                    node = node_map[source_id]
+                    # Ensure node width/height are non-zero to avoid division by zero
+                    if node["width"] > 0 and node["height"] > 0:
+                        fx = (start_p["x"] - node["x"]) / node["width"]
+                        fy = (start_p["y"] - node["y"]) / node["height"]
+
+                        if fx == 0:
+                            fx = -0.03
+                        elif fx == 1:
+                            fx = 1.03
+                        if fy == 0:
+                            fy = -0.03
+                        elif fy == 1:
+                            fy = 1.03
+                        start_binding["fixedPoint"] = [fx, fy]
+
+                excalidraw_edge["startBinding"] = start_binding
+
             if edge.get("targets"):
-                excalidraw_edge["endBinding"] = {
-                    "elementId": edge["targets"][0],
+                target_id = edge["targets"][0]
+                end_binding = {
+                    "elementId": target_id,
                     "mode": "orbit",
                     "fixedPoint": None,
                 }
+                # Calculate fixed point for end
+                if node_map and target_id in node_map and raw_points:
+                    end_p = raw_points[-1]
+                    node = node_map[target_id]
+                    if node["width"] > 0 and node["height"] > 0:
+                        fx = (end_p["x"] - node["x"]) / node["width"]
+                        fy = (end_p["y"] - node["y"]) / node["height"]
+                        end_binding["fixedPoint"] = [fx, fy]
+
+                excalidraw_edge["endBinding"] = end_binding
 
             excalidraw_edges.append(excalidraw_edge)
 
@@ -170,12 +202,12 @@ class DiagramService:
         excalidraw_elements = self._convert_elk_elements_to_excalidraw_elements(
             elk_json.get("children", []), files
         )
-        
-        excalidraw_edges = self._convert_elk_edges_to_excalidraw_elements(
-            elk_json.get("edges", [])
-        )
 
         node_map = {node["id"]: node for node in excalidraw_elements}
+
+        excalidraw_edges = self._convert_elk_edges_to_excalidraw_elements(
+            elk_json.get("edges", []), node_map
+        )
 
         for edge in excalidraw_edges:
             edge_id = edge["id"]
