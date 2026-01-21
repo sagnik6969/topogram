@@ -170,9 +170,32 @@ class DiagramService:
         excalidraw_elements = self._convert_elk_elements_to_excalidraw_elements(
             elk_json.get("children", []), files
         )
-        excalidraw_elements.extend(
-            self._convert_elk_edges_to_excalidraw_elements(elk_json.get("edges", []))
+        
+        excalidraw_edges = self._convert_elk_edges_to_excalidraw_elements(
+            elk_json.get("edges", [])
         )
+
+        node_map = {node["id"]: node for node in excalidraw_elements}
+
+        for edge in excalidraw_edges:
+            edge_id = edge["id"]
+            if edge.get("startBinding"):
+                start_node_id = edge["startBinding"]["elementId"]
+                if start_node_id in node_map:
+                    node = node_map[start_node_id]
+                    if "boundElements" not in node or node["boundElements"] is None:
+                        node["boundElements"] = []
+                    node["boundElements"].append({"id": edge_id, "type": "arrow"})
+
+            if edge.get("endBinding"):
+                end_node_id = edge["endBinding"]["elementId"]
+                if end_node_id in node_map:
+                    node = node_map[end_node_id]
+                    if "boundElements" not in node or node["boundElements"] is None:
+                        node["boundElements"] = []
+                    node["boundElements"].append({"id": edge_id, "type": "arrow"})
+
+        excalidraw_elements.extend(excalidraw_edges)
 
         return {
             "type": "excalidraw",
@@ -217,7 +240,7 @@ class DiagramService:
             }
 
             image_element = {
-                "id": str(uuid4()),
+                "id": node["id"],
                 "type": "image",
                 "x": x,  # Center horizontally (icon is 128x128)
                 "y": y,  # Top aligned
