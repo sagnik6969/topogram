@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Excalidraw, Sidebar } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-
 import "./App.css";
-import { CustomSidebar } from "./CustomSidebar";
+import { IconsSidebar } from "./IconsSidebar";
+import { Brain, Cloud } from "lucide-react";
 
 function App() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
@@ -20,10 +20,15 @@ function App() {
       <Excalidraw
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
         renderTopRightUI={() => (
-          <Sidebar.Trigger name="aws-icons">AWS Icons</Sidebar.Trigger>
+          <>
+            <Sidebar.Trigger icon={<Brain />} name="ai-agent">
+              Ask AI
+            </Sidebar.Trigger>
+            <Sidebar.Trigger name="icons-sidebar">AWS Icons</Sidebar.Trigger>
+          </>
         )}
       >
-        <CustomSidebar excalidrawAPI={excalidrawAPI} />
+        <IconsSidebar excalidrawAPI={excalidrawAPI} />
       </Excalidraw>
     </div>
   );

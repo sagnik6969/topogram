@@ -7,7 +7,7 @@ interface IconItem {
   name: string;
 }
 
-export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
+export const IconsSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Load icons eagerly as URLs using Vite's glob import
@@ -201,7 +201,7 @@ export const CustomSidebar = ({ excalidrawAPI }: { excalidrawAPI: any }) => {
   };
 
   return (
-    <Sidebar name="aws-icons" className="custom-sidebar" docked={true}>
+    <Sidebar name="icons-sidebar" className="custom-sidebar" docked={true}>
       <Sidebar.Header>
         <h3 style={{ margin: 0, padding: "0.5rem" }}>AWS Icons</h3>
       </Sidebar.Header>
