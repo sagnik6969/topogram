@@ -165,12 +165,21 @@ class DiagramService:
 
                         if fx == 0:
                             fx = -0.03
+                            excalidraw_edge["x"] -= 0.03 * node["width"]
+                            excalidraw_edge["points"][-1][0] += 0.03 * node["width"]
                         elif fx == 1:
                             fx = 1.03
+                            excalidraw_edge["x"] += 0.03 * node["width"]
+                            excalidraw_edge["points"][-1][0] -= 0.03 * node["width"]
+
                         if fy == 0:
                             fy = -0.03
+                            excalidraw_edge["y"] -= 0.03 * node["height"]
+                            excalidraw_edge["points"][-1][1] += 0.03 * node["height"]
                         elif fy == 1:
                             fy = 1.03
+                            excalidraw_edge["y"] += 0.03 * node["height"]
+                            excalidraw_edge["points"][-1][1] -= 0.03 * node["height"]
                         start_binding["fixedPoint"] = [fx, fy]
 
                 excalidraw_edge["startBinding"] = start_binding
@@ -189,6 +198,21 @@ class DiagramService:
                     if node["width"] > 0 and node["height"] > 0:
                         fx = (end_p["x"] - node["x"]) / node["width"]
                         fy = (end_p["y"] - node["y"]) / node["height"]
+
+                        if fx == 0:
+                            fx = -0.03
+                            excalidraw_edge["points"][-1][0] -= 0.03 * node["width"]
+                        elif fx == 1:
+                            fx = 1.03
+                            excalidraw_edge["points"][-1][0] += 0.03 * node["width"]
+
+                        if fy == 0:
+                            fy = -0.03
+                            excalidraw_edge["points"][-1][1] -= 0.03 * node["height"]
+                        elif fy == 1:
+                            fy = 1.03
+                            excalidraw_edge["points"][-1][1] += 0.03 * node["height"]
+
                         end_binding["fixedPoint"] = [fx, fy]
 
                 excalidraw_edge["endBinding"] = end_binding
