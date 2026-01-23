@@ -5,9 +5,8 @@ import httpx
 import json
 import os
 from app.agents.elk_input_graph_generator_agent.agent import (
-    get_agent_using_checkpointer as get_elk_input_graph_generator_agent,
+    agent as elk_input_graph_generator_agent,
 )
-from langgraph.checkpoint.mongodb import MongoDBSaver
 
 
 class DiagramType(TypedDict):
@@ -470,20 +469,11 @@ class DiagramService:
         return {"id": "root", "children": root_nodes, "edges": edges}
 
     async def generate_elk_json_input_using_agent(
-        self, message: str, thread_id: str
+        self, chat_history: list[dict]
     ) -> dict:
-        with MongoDBSaver.from_conn_string(
-            conn_string=settings.MONGODB_URI.get_secret_value(),
-            db_name=settings.MONGODB_DB_NAME,
-            checkpoint_collection_name="langgraph-checkpoints",
-            writes_collection_name="langgraph-checkpoints-writes",
-        ) as checkpointer:
-            agent = get_elk_input_graph_generator_agent(checkpointer)
-
-            agent_response = await agent.ainvoke(
-                {"messages": message},
-                {"configurable": {"thread_id": thread_id}},
-            )
+        agent_response = await elk_input_graph_generator_agent.ainvoke(
+            {"messages": chat_history}
+        )
         graph_dict = agent_response["structured_response"].model_dump(mode="json")
 
         elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
@@ -597,11 +587,9 @@ class DiagramService:
             return response.json()
 
     async def generate_excalidraw_from_description(
-        self, thread_id: str, message: str
+        self, chat_history: list[dict]
     ) -> dict:
-        elk_input_graph = await self.generate_elk_json_input_using_agent(
-            message, thread_id
-        )
+        elk_input_graph = await self.generate_elk_json_input_using_agent(chat_history)
         elk_output_graph = self.generate_elk_output_json(elk_input_graph)
         excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
         return excalidraw_json
