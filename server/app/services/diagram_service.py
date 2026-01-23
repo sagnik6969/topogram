@@ -470,10 +470,10 @@ class DiagramService:
         return {"id": "root", "children": root_nodes, "edges": edges}
 
     async def generate_elk_json_input_using_agent(
-        self, chat_history: Any, thread_id: str
+        self, message: str, thread_id: str
     ) -> dict:
-        async with MongoDBSaver.from_conn_string(
-            conn_string=settings.MONGODB_URI,
+        with MongoDBSaver.from_conn_string(
+            conn_string=settings.MONGODB_URI.get_secret_value(),
             db_name=settings.MONGODB_DB_NAME,
             checkpoint_collection_name="langgraph-checkpoints",
             writes_collection_name="langgraph-checkpoints-writes",
@@ -481,7 +481,7 @@ class DiagramService:
             agent = get_elk_input_graph_generator_agent(checkpointer)
 
             agent_response = await agent.ainvoke(
-                {"messages": chat_history},
+                {"messages": message},
                 {"configurable": {"thread_id": thread_id}},
             )
         graph_dict = agent_response["structured_response"].model_dump(mode="json")
@@ -597,11 +597,15 @@ class DiagramService:
             return response.json()
 
     async def generate_excalidraw_from_description(
-        self, chat_history: Any, thread_id: str
+        self, thread_id: str, message: str
     ) -> dict:
         elk_input_graph = await self.generate_elk_json_input_using_agent(
-            chat_history, thread_id
+            message, thread_id
         )
         elk_output_graph = self.generate_elk_output_json(elk_input_graph)
         excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
         return excalidraw_json
+
+
+def get_diagram_service() -> DiagramService:
+    return DiagramService()

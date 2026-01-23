@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.services.diagram_service import DiagramService
-from app.api.deps import get_diagram_service
+from app.services.diagram_service import get_diagram_service
 
 router = APIRouter(prefix="/diagrams", tags=["Diagrams"])
 
