@@ -98,6 +98,7 @@ export const AiSidebar = ({ isDocked, setIsDocked }: { isDocked: boolean, setIsD
         try {
             await signInWithPopup(auth, provider);
         } catch (error: any) {
+            console.error("Error signing in with Google: ", error);
             setAuthError(error.message);
         }
     };
