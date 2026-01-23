@@ -5,7 +5,7 @@ import "./App.css";
 import { IconsSidebar } from "./IconsSidebar";
 import { AiSidebar } from "./AiSidebar";
 import { Brain, Github, Linkedin } from "lucide-react";
-import { app } from "./firebase";
+
 function App() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [isIconsSidebarDocked, setIsIconsSidebarDocked] = useState<boolean>(false);
