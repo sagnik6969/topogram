@@ -3,11 +3,13 @@ import { Excalidraw, MainMenu, Sidebar } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import "./App.css";
 import { IconsSidebar } from "./IconsSidebar";
+import { AiSidebar } from "./AiSidebar";
 import { Brain, Github, Linkedin } from "lucide-react";
 
 function App() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [isIconsSidebarDocked, setIsIconsSidebarDocked] = useState<boolean>(false);
+  const [isAiSidebarDocked, setIsAiSidebarDocked] = useState<boolean>(false);
 
   return (
     <div
@@ -47,7 +49,9 @@ function App() {
           </MainMenu.Group>
           <MainMenu.DefaultItems.ChangeCanvasBackground />
         </MainMenu>
-        <IconsSidebar excalidrawAPI={excalidrawAPI} isDocked={isIconsSidebarDocked} setIsDocked={setIsIconsSidebarDocked} />
+        <IconsSidebar
+          excalidrawAPI={excalidrawAPI} isDocked={isIconsSidebarDocked} setIsDocked={setIsIconsSidebarDocked} />
+        <AiSidebar isDocked={isAiSidebarDocked} setIsDocked={setIsAiSidebarDocked} />
       </Excalidraw>
     </div>
   );
