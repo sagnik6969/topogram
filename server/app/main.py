@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from app.api.v1 import router as v1_router
 import logging
 from app.config.settings import settings
@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.db.models import UserThread
+from firebase_admin import initialize_app, delete_app
+from utils.auth import authenticate_user
 
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
@@ -19,6 +21,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- STARTUP LOGIC ---
+    firebase_app = initialize_app()
     # Create the Motor client
     client = AsyncIOMotorClient(settings.MONGODB_URI.get_secret_value())
 
@@ -35,8 +38,19 @@ async def lifespan(app: FastAPI):
     client.close()
     logger.info("Shutdown: Database connection closed.")
 
+    # Shutdown Firebase
+    try:
+        delete_app(firebase_app)
+        logger.info("Shutdown: Firebase app deleted.")
+    except Exception as e:
+        logger.warning(f"Shutdown: Firebase app cleanup failed: {e}")
 
-app = FastAPI(root_path="/main_backend_service", lifespan=lifespan)
+
+app = FastAPI(
+    root_path="/main_backend_service",
+    lifespan=lifespan,
+    dependencies=[Depends(authenticate_user)],
+)
 
 app.include_router(v1_router)
 
