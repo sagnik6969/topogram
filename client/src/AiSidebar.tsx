@@ -15,9 +15,11 @@ interface Message {
 }
 
 export const AiSidebar = ({
+  excalidrawAPI,
   isDocked,
   setIsDocked,
 }: {
+  excalidrawAPI: any;
   isDocked: boolean;
   setIsDocked: (isDocked: boolean) => void;
 }) => {
@@ -42,7 +44,7 @@ export const AiSidebar = ({
     scrollToBottom();
   }, [messages, user]); // Scroll when messages change or user logs in (view changes)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const newMessage: Message = {
@@ -55,13 +57,19 @@ export const AiSidebar = ({
     setMessages((prev) => [...prev, newMessage]);
     setInput("");
 
-    apiClient.post("/ai/message", {});
+    const response = await apiClient.post("/main_backend_service/v1/chat/", {
+      user_message: input,
+    });
+
+    excalidrawAPI.addFiles(response.data.files);
+
+    excalidrawAPI.updateScene(response.data);
 
     // Simulate AI response
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I received your message! This is a mock response.",
+        text: "Successfully generated the diagram!",
         sender: "ai",
         timestamp: Date.now(),
       };

@@ -51,7 +51,7 @@ function App() {
         </MainMenu>
         <IconsSidebar
           excalidrawAPI={excalidrawAPI} isDocked={isIconsSidebarDocked} setIsDocked={setIsIconsSidebarDocked} />
-        <AiSidebar isDocked={isAiSidebarDocked} setIsDocked={setIsAiSidebarDocked} />
+        <AiSidebar excalidrawAPI={excalidrawAPI} isDocked={isAiSidebarDocked} setIsDocked={setIsAiSidebarDocked} />
       </Excalidraw>
     </div>
   );
