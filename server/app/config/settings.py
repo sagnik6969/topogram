@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    CORES_ALLOWED_ORIGINS: str
     MONGODB_URI: SecretStr
     ELK_SERVICE_ENDPOINT: str
     DEFAULT_EXCALIDRAW_ELEMENT_WIDTH: int = 150

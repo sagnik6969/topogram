@@ -8,6 +8,7 @@ from beanie import init_beanie
 from app.db.models import UserThread
 from firebase_admin import initialize_app, delete_app
 from utils.auth import authenticate_user
+from fastapi.middleware.cors import CORSMiddleware
 
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
@@ -50,6 +51,14 @@ app = FastAPI(
     root_path="/main_backend_service",
     lifespan=lifespan,
     dependencies=[Depends(authenticate_user)],
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORES_ALLOWED_ORIGINS.split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(v1_router)
