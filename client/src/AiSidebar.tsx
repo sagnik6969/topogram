@@ -58,9 +58,12 @@ export const AiSidebar = ({ isDocked, setIsDocked }: { isDocked: boolean, setIsD
     return (
         <Sidebar name="ai-agent" className="ai-sidebar" docked={isDocked} onDock={(docked) => setIsDocked(docked)}>
             <div className="ai-sidebar-container">
-                <div className="ai-sidebar-header">
-                    <h3>AI Assistant</h3>
-                </div>
+                <Sidebar.Header>
+                    <div className="ai-sidebar-header">
+                        <h3>AI Assistant</h3>
+                    </div>
+                </Sidebar.Header>
+
 
                 <div className="ai-chat-messages">
                     {messages.map((msg) => (

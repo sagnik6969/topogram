@@ -10,8 +10,6 @@
 }
 
 .ai-sidebar-header {
-  padding: 1rem;
-  border-bottom: 1px solid var(--button-gray-2, #e0e0e0);
   background-color: var(--island-bg-color, #f8f9fa);
 }
 
