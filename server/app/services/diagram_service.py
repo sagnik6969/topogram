@@ -5,9 +5,9 @@ import httpx
 import json
 import os
 from app.agents.elk_input_graph_generator_agent.agent import (
-    agent as elk_input_graph_generator_agent,
+    get_agent_using_checkpointer as get_elk_input_graph_generator_agent,
 )
-from app.agents.elk_input_graph_generator_agent.schemas import Graph as PartialElkGraph
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 
 class DiagramType(TypedDict):
@@ -469,10 +469,21 @@ class DiagramService:
 
         return {"id": "root", "children": root_nodes, "edges": edges}
 
-    def generate_elk_json_input_using_agent(self, prompt: str) -> dict:
-        agent_response: PartialElkGraph = elk_input_graph_generator_agent.invoke(
-            {"messages": [{"role": "user", "content": prompt}]}
-        )
+    async def generate_elk_json_input_using_agent(
+        self, chat_history: Any, thread_id: str
+    ) -> dict:
+        async with MongoDBSaver.from_conn_string(
+            conn_string=settings.MONGODB_URI,
+            db_name=settings.MONGODB_DB_NAME,
+            checkpoint_collection_name="langgraph-checkpoints",
+            writes_collection_name="langgraph-checkpoints-writes",
+        ) as checkpointer:
+            agent = get_elk_input_graph_generator_agent(checkpointer)
+
+            agent_response = await agent.ainvoke(
+                {"messages": chat_history},
+                {"configurable": {"thread_id": thread_id}},
+            )
         graph_dict = agent_response["structured_response"].model_dump(mode="json")
 
         elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
@@ -585,8 +596,12 @@ class DiagramService:
             response.raise_for_status()
             return response.json()
 
-    def generate_excalidraw_from_description(self, description: str) -> dict:
-        elk_input_graph = self.generate_elk_json_input_using_agent(description)
+    async def generate_excalidraw_from_description(
+        self, chat_history: Any, thread_id: str
+    ) -> dict:
+        elk_input_graph = await self.generate_elk_json_input_using_agent(
+            chat_history, thread_id
+        )
         elk_output_graph = self.generate_elk_output_json(elk_input_graph)
         excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
         return excalidraw_json
