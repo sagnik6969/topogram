@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from firebase_admin import initialize_app, delete_app
 from utils.auth import authenticate_user
 from fastapi.middleware.cors import CORSMiddleware
+from langfuse import get_client
 
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
@@ -20,6 +21,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # --- STARTUP LOGIC ---
     firebase_app = initialize_app()
+    # _ = get_client()
+
     yield  # The application runs here
 
     # --- SHUTDOWN LOGIC ---

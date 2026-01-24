@@ -7,6 +7,8 @@ import os
 from app.agents.elk_input_graph_generator_agent.agent import (
     agent as elk_input_graph_generator_agent,
 )
+from langfuse.langchain import CallbackHandler
+from langfuse import get_client
 
 
 class DiagramType(TypedDict):
@@ -468,12 +470,13 @@ class DiagramService:
 
         return {"id": "root", "children": root_nodes, "edges": edges}
 
-    async def generate_elk_json_input_using_agent(
-        self, chat_history: list[dict]
-    ) -> dict:
+    async def generate_elk_json_input_using_agent(self, graph_state: dict) -> dict:
+        client = get_client()
+        callback_handler = CallbackHandler()
         agent_response = await elk_input_graph_generator_agent.ainvoke(
-            {"messages": chat_history}
+            graph_state, config={"callbacks": [callback_handler]}
         )
+        client.flush()
         graph_dict = agent_response["structured_response"].model_dump(mode="json")
 
         elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
@@ -576,7 +579,7 @@ class DiagramService:
         for node in elk_graph.get("children", []):
             process_node(node)
 
-        return elk_graph
+        return elk_graph, agent_response
 
     def generate_elk_output_json(self, elk_graph: dict) -> dict:
         with httpx.Client() as client:
@@ -586,13 +589,13 @@ class DiagramService:
             response.raise_for_status()
             return response.json()
 
-    async def generate_excalidraw_from_description(
-        self, chat_history: list[dict]
-    ) -> dict:
-        elk_input_graph = await self.generate_elk_json_input_using_agent(chat_history)
+    async def generate_excalidraw_from_description(self, graph_state: dict) -> dict:
+        elk_input_graph, graph_state = await self.generate_elk_json_input_using_agent(
+            graph_state
+        )
         elk_output_graph = self.generate_elk_output_json(elk_input_graph)
         excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
-        return excalidraw_json
+        return excalidraw_json, graph_state
 
 
 def get_diagram_service() -> DiagramService:

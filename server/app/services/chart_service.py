@@ -1,8 +1,9 @@
 from uuid import uuid4
 from app.services.diagram_service import DiagramService, get_diagram_service
 from fastapi import Depends
-from app.db.repositories.chat_repository import FirestoreChatHistory
+from app.db.repositories.chat_repository import LanggraphCheckpoints
 from fastapi import HTTPException
+from utils.serialize_checkpoint import serialize_checkpoint
 
 
 class ChatService:
@@ -13,35 +14,27 @@ class ChatService:
         self, user_message: str, thread_id: str | None, user_id: str
     ) -> dict:
         if thread_id:
-            chat_history = FirestoreChatHistory(session_id=thread_id, user_id=user_id)
-            if not chat_history.exists():
+            checkpoint = LanggraphCheckpoints(session_id=thread_id, user_id=user_id)
+            if not checkpoint.exists():
                 raise HTTPException(status_code=404, detail="Chat thread not found")
 
-            chat_history.add_message(role="user", content=user_message)
-
-            agent_response = (
-                await self.diagram_service.generate_excalidraw_from_description(
-                    chat_history.get_history(limit=100)
-                )
-            )
-
-            chat_history.add_message(role="ai", content=str(agent_response))
-
-        if not thread_id:
+            checkpoint.store_checkpoint({"messages": []})
+        else:
             new_thread_id = str(uuid4())
 
-            db_thread = FirestoreChatHistory(session_id=new_thread_id, user_id=user_id)
-            db_thread.initialize_session()
-            db_thread.add_message(role="user", content=user_message)
+            checkpoint = LanggraphCheckpoints(session_id=new_thread_id, user_id=user_id)
+            checkpoint.initialize_session()
 
-            agent_response = (
-                await self.diagram_service.generate_excalidraw_from_description(
-                    db_thread.get_history(limit=100)
-                )
-            )
-            db_thread.add_message(role="ai", content=str(agent_response))
+        checkpoint.add_message(role="user", content=user_message)
 
-        return agent_response
+        (
+            excalidraw,
+            agent_response,
+        ) = await self.diagram_service.generate_excalidraw_from_description(
+            checkpoint.get_checkpoint()
+        )
+        checkpoint.store_checkpoint(serialize_checkpoint(agent_response))
+        return excalidraw
 
 
 def get_chat_service(

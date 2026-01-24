@@ -2,7 +2,7 @@ from google.cloud import firestore
 import uuid
 
 
-class FirestoreChatHistory:
+class LanggraphCheckpoints:
     def __init__(self, session_id: str = None, user_id: str = "anonymous"):
         self.db = firestore.Client()
         self.user_id = user_id
@@ -11,7 +11,6 @@ class FirestoreChatHistory:
 
         # References
         self.session_ref = self.db.collection("chat_sessions").document(self.session_id)
-        self.messages_ref = self.session_ref.collection("messages")
 
     def exists(self) -> bool:
         """Checks if the session document exists."""
@@ -25,51 +24,27 @@ class FirestoreChatHistory:
                     "user_id": self.user_id,
                     "created_at": firestore.SERVER_TIMESTAMP,
                     "updated_at": firestore.SERVER_TIMESTAMP,
+                    "checkpoint": None,
                 }
             )
 
+    def store_checkpoint(self, checkpoint_data: dict):
+        """Stores checkpoint data in the session document."""
+        self.session_ref.update({"checkpoint": checkpoint_data})
+
     def add_message(self, role: str, content: str):
-        """
-        Adds a message to the history.
-        role: 'user' or 'ai' (or 'system')
-        """
-        message_data = {
-            "role": role,
-            "content": content,
-            "timestamp": firestore.SERVER_TIMESTAMP,
-        }
-        # Add to sub-collection
-        self.messages_ref.add(message_data)
+        self.session_ref.update(
+            {
+                "checkpoint.messages": firestore.ArrayUnion(
+                    [{"role": role, "content": content}]
+                )
+            }
+        )
 
-        # Update parent session timestamp for sorting active chats
-        self.session_ref.update({"updated_at": firestore.SERVER_TIMESTAMP})
-
-    def get_history(self, limit=10):
-        """
-        Fetches recent messages for context window.
-        Returns a list of dicts: [{'role': 'user', 'content': '...'}, ...]
-        """
-        # Query: Order by timestamp descending (newest first) -> limit -> reverse back
-        query = self.messages_ref.order_by(
-            "timestamp", direction=firestore.Query.DESCENDING
-        ).limit(limit)
-
-        docs = query.stream()
-
-        # We fetch newest first for efficiency, but list should be oldest->newest for the AI
-        history = []
-        for doc in docs:
-            history.append(doc.to_dict())
-
-        return history[::-1]  # Reverse to chronological order
-
-    def delete_history(self):
-        """Hard deletes all messages in the session (batched)."""
-        batch = self.db.batch()
-        docs = self.messages_ref.list_documents()
-
-        for doc in docs:
-            batch.delete(doc)
-
-        batch.commit()
-        self.session_ref.delete()
+    def get_checkpoint(self) -> dict | None:
+        """Retrieves checkpoint data from the session document."""
+        doc = self.session_ref.get()
+        if doc.exists:
+            data = doc.to_dict()
+            return data.get("checkpoint", None)
+        return None
