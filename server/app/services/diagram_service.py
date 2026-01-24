@@ -8,7 +8,6 @@ from app.agents.elk_input_graph_generator_agent.agent import (
     agent as elk_input_graph_generator_agent,
 )
 from langfuse.langchain import CallbackHandler
-from langfuse import get_client
 
 
 class DiagramType(TypedDict):
@@ -471,12 +470,10 @@ class DiagramService:
         return {"id": "root", "children": root_nodes, "edges": edges}
 
     async def generate_elk_json_input_using_agent(self, graph_state: dict) -> dict:
-        client = get_client()
         callback_handler = CallbackHandler()
         agent_response = await elk_input_graph_generator_agent.ainvoke(
             graph_state, config={"callbacks": [callback_handler]}
         )
-        client.flush()
         graph_dict = agent_response["structured_response"].model_dump(mode="json")
 
         elk_graph = self.convert_agent_response_to_elk_json(graph_dict)

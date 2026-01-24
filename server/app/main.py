@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # --- STARTUP LOGIC ---
     firebase_app = initialize_app()
-    # _ = get_client()
+    _ = get_client()
 
     yield  # The application runs here
 
