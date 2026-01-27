@@ -69,9 +69,10 @@ class DiagramService:
                 "icon_id": elk_element.get("icon_id"),
                 "shape": "rectangle",
             }
+            is_container = bool(elk_element.get("children", []))
             excalidraw_elements_in_current_step = (
                 self.convert_graph_node_to_excalidraw_elements(
-                    node, x, y, height, width, files
+                    node, x, y, height, width, files, is_container=is_container
                 )
             )
             excalidraw_elements.extend(excalidraw_elements_in_current_step)
@@ -276,14 +277,52 @@ class DiagramService:
         height: int,
         width: int,
         files: dict,
+        is_container: bool = False,
     ) -> list[dict]:
         elements = []
         icon_id = node.get("icon_id")
         text_content = node.get("text")
         group_id = str(uuid4())
 
-        # 1. Render Icon if available
-        if icon_id and icon_id in self.aws_icons:
+        # 1. Determine layout configuration
+        has_valid_icon = icon_id and icon_id in self.aws_icons
+        should_render_rect = is_container or not has_valid_icon
+        icon_size = 32 if is_container else 128
+
+        # 2. Render Container Border / Fallback Shape
+        # Render a rectangle if it's a container (border) or if there's no icon (fallback)
+        if should_render_rect:
+            shape = {
+                "id": node["id"],
+                "type": "rectangle",
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 0,
+                "opacity": 100,
+                "groupIds": [group_id],
+                "frameId": None,
+                "index": "a0",
+                "roundness": {"type": 3},
+                "seed": 926821016,
+                "version": 66,
+                "versionNonce": 750530792,
+                "isDeleted": False,
+                "updated": 1768110275345,
+                "link": None,
+                "locked": False,
+            }
+            elements.append(shape)
+
+        # 3. Render Icon if available
+        if has_valid_icon:
             icon_data = self.aws_icons[icon_id]
             file_id = str(uuid4())
             # Excalidraw expects "dataURL" in files
@@ -296,12 +335,12 @@ class DiagramService:
             }
 
             image_element = {
-                "id": node["id"],
+                "id": str(uuid4()) if should_render_rect else node["id"],
                 "type": "image",
-                "x": x,  # Center horizontally (icon is 128x128)
-                "y": y,  # Top aligned
-                "width": 128,
-                "height": 128,
+                "x": x,  # Top aligned
+                "y": y,  # Left aligned
+                "width": icon_size,
+                "height": icon_size,
                 "angle": 0,
                 "strokeColor": "transparent",
                 "backgroundColor": "transparent",
@@ -326,46 +365,11 @@ class DiagramService:
                 "scale": [1, 1],
             }
             elements.append(image_element)
-        else:
-            # Fallback shape if no icon
-            shape = {
-                "id": node["id"],
-                "type": "rectangle",
-                "x": x,
-                "y": y,
-                "width": width,
-                "height": height,
-                "angle": 0,
-                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
-                "backgroundColor": "transparent",
-                "fillStyle": "solid",
-                "strokeWidth": 2,
-                "strokeStyle": "solid",
-                "roughness": 0,
-                "opacity": 100,
-                "groupIds": [],
-                "frameId": None,
-                "index": "a0",
-                "roundness": {"type": 3},
-                "seed": 926821016,
-                "version": 66,
-                "versionNonce": 750530792,
-                "isDeleted": False,
-                "updated": 1768110275345,
-                "link": None,
-                "locked": False,
-            }
-            elements.append(shape)
 
-        # 2. Render Text if available
+        # 4. Render Text if available
         if text_content:
             text_element_id = str(uuid4())
-            # For icon nodes, text is below the icon
-            # Start Y for text = y + 128 (icon height) if icon exists, else middle
-            # The user requested specific calculation based on logic:
-            # width/height were pre-calculated in process_node.
-            # If leaf node (icon present): width ~ 128+padding, height = 128+text_height+padding
-
+            
             # Re-calculate text dimensions to position it
             font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
             line_height = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
@@ -382,12 +386,18 @@ class DiagramService:
             )
             text_element_height = num_lines * font_size * line_height
 
-            # Center text horizontally
+            # Center text horizontally by default
             text_element_x = x
 
-            if icon_id:
-                # Place below icon (128px)
-                text_element_y = y + 128
+            if has_valid_icon:
+                if is_container:
+                     # Place to the right of the icon
+                    text_element_x = x + icon_size + 8
+                    # Center vertically relative to the icon
+                    text_element_y = y + (icon_size / 2) - (text_element_height / 2)
+                else:
+                    # Place below icon
+                    text_element_y = y + icon_size
             else:
                 # Center vertically in the box
                 text_element_y = y
@@ -422,18 +432,18 @@ class DiagramService:
                 "text": text_content,
                 "fontSize": font_size,
                 "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
-                "textAlign": "center",
+                "textAlign": "left" if is_container and has_valid_icon else "center",
                 "verticalAlign": "middle",
                 "containerId": node["id"]
-                if not icon_id
+                if should_render_rect
                 else None,  # Only bind if it's inside a container shape
                 "originalText": text_content,
                 "autoResize": True,
                 "lineHeight": line_height,
             }
 
-            # If we created a fallback shape, bind text to it
-            if not icon_id and len(elements) > 0:
+            # If we created a container/fallback shape, bind text to it
+            if should_render_rect and len(elements) > 0:
                 elements[0]["boundElements"] = [{"type": "text", "id": text_element_id}]
 
             elements.append(text_element)
@@ -504,9 +514,14 @@ class DiagramService:
             # 3. Each element should have padding
             # Remove padding from leaf nodes as per user request
             padding = 0 if is_leaf else 8
+
+            top_padding = padding
+            if not is_leaf and node.get("icon_id"):
+                top_padding = 44  # 32 icon + 12 padding
+
             node.setdefault("layoutOptions", {})
             node["layoutOptions"]["elk.padding"] = (
-                f"[top={padding},left={padding},bottom={padding},right={padding}]"
+                f"[top={top_padding},left={padding},bottom={padding},right={padding}]"
             )
 
             if is_leaf:
