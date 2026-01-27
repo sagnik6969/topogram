@@ -310,7 +310,7 @@ class DiagramService:
                 "groupIds": [group_id],
                 "frameId": None,
                 "index": "a0",
-                "roundness": {"type": 3},
+                "roundness": None,
                 "seed": 926821016,
                 "version": 66,
                 "versionNonce": 750530792,
@@ -369,7 +369,7 @@ class DiagramService:
         # 4. Render Text if available
         if text_content:
             text_element_id = str(uuid4())
-            
+
             # Re-calculate text dimensions to position it
             font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
             line_height = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
@@ -391,7 +391,7 @@ class DiagramService:
 
             if has_valid_icon:
                 if is_container:
-                     # Place to the right of the icon
+                    # Place to the right of the icon
                     text_element_x = x + icon_size + 8
                     # Center vertically relative to the icon
                     text_element_y = y + (icon_size / 2) - (text_element_height / 2)
