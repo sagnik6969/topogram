@@ -513,16 +513,18 @@ class DiagramService:
 
             # 3. Each element should have padding
             # Remove padding from leaf nodes as per user request
-            padding = 0 if is_leaf else 8
+            padding = 0 if is_leaf else 50
 
             top_padding = padding
             if not is_leaf and node.get("icon_id"):
-                top_padding = 44  # 32 icon + 12 padding
+                top_padding = 100  # 32 icon + 12 padding
 
             node.setdefault("layoutOptions", {})
             node["layoutOptions"]["elk.padding"] = (
                 f"[top={top_padding},left={padding},bottom={padding},right={padding}]"
             )
+            node["layoutOptions"]["elk.spacing.nodeNode"] = 50
+            node["layoutOptions"]["elk.layered.spacing.nodeNodeBetweenLayers"] = 100
 
             if is_leaf:
                 # 2. For each leaf node add its height and width.
