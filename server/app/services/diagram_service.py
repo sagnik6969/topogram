@@ -93,10 +93,21 @@ class DiagramService:
         for edge in elk_edges:
             raw_points = []
 
+            offset_x = 0
+            offset_y = 0
+            container_id = edge.get("container")
+            if container_id and node_map and container_id in node_map:
+                container = node_map[container_id]
+                offset_x = container["x"]
+                offset_y = container["y"]
+
             for section in edge.get("sections", []):
-                raw_points.append(section["startPoint"])
-                raw_points.extend(section.get("bendPoints", []))
-                raw_points.append(section["endPoint"])
+                p = section["startPoint"]
+                raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
+                for bp in section.get("bendPoints") or []:
+                    raw_points.append({"x": bp["x"] + offset_x, "y": bp["y"] + offset_y})
+                p = section["endPoint"]
+                raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
 
             if not raw_points:
                 continue
