@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Sidebar } from "@excalidraw/excalidraw";
-import { Send, Bot, LogOut, History, Plus } from "lucide-react";
+import { Send, Bot, LogOut, History, Plus, Terminal } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import "./AiSidebar.css";
@@ -11,7 +11,8 @@ import { ChatHistory, type ChatSession } from "./ChatHistory";
 interface Message {
   id: string;
   text: string;
-  sender: "user" | "ai";
+  sender: "user" | "ai" | "tool";
+  name?: string;
   timestamp: number;
 }
 
@@ -105,12 +106,28 @@ export const AiSidebar = ({
       const loadedMessages: Message[] = chat.checkpoint.messages.map((m, idx) => ({
         id: m.id || `${chat.id}-${idx}`,
         text: m.content,
-        sender: m.type === 'human' ? 'user' : 'ai',
+        sender: m.type === 'human' ? 'user' : (m.type === 'tool' ? 'tool' : 'ai'),
+        name: m.name || (m.type === 'tool' ? 'Tool' : undefined),
         timestamp: Date.now(), // Timestamps are not preserved in this view of history
       }));
       setMessages(loadedMessages);
     }
     setIsHistoryOpen(false);
+  };
+
+  const formatMessageContent = (text: string) => {
+    try {
+      // Check if it looks like JSON/Array before parsing to avoid parsing simple numbers/bools if unwanted
+      if ((text.trim().startsWith('{') || text.trim().startsWith('['))) {
+        const parsed = JSON.parse(text);
+        if (typeof parsed === 'object' && parsed !== null) {
+          return <div className="ai-code-block">{JSON.stringify(parsed, null, 2)}</div>;
+        }
+      }
+    } catch (e) {
+      // Not JSON
+    }
+    return text;
   };
 
   return (
@@ -165,16 +182,26 @@ export const AiSidebar = ({
         ) : (
           <>
             <div className="ai-chat-messages">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`ai-chat-message ${msg.sender}`}>
-                  {msg.sender === "ai" && (
-                    <div className="ai-message-sender-label">
-                      <Bot size={14} /> <span>AI Agent</span>
-                    </div>
-                  )}
-                  {msg.text}
-                </div>
-              ))}
+              {messages.map((msg) => {
+                // If message content is empty/blank, skip rendering
+                if (!msg.text) return null;
+
+                return (
+                  <div key={msg.id} className={`ai-chat-message ${msg.sender}`}>
+                    {msg.sender === "ai" && (
+                      <div className="ai-message-sender-label">
+                        <Bot size={14} /> <span>AI Agent</span>
+                      </div>
+                    )}
+                    {msg.sender === "tool" && (
+                      <div className="tool-name-label">
+                        <Terminal size={14} /> <span>{msg.name || "Tool Output"}</span>
+                      </div>
+                    )}
+                    {formatMessageContent(msg.text)}
+                  </div>
+                )
+              })}
               <div ref={messagesEndRef} />
             </div>
 
