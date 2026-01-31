@@ -48,3 +48,32 @@ class LanggraphCheckpoints:
             data = doc.to_dict()
             return data.get("checkpoint", None)
         return None
+
+
+class ChatRepository:
+    def __init__(self):
+        self.db = firestore.Client()
+        self.collection = self.db.collection("chat_sessions")
+
+    def get_user_chats(
+        self, user_id: str, limit: int = 20, offset: int = 0
+    ) -> list[dict]:
+        """Fetches all chats for a given user with pagination."""
+        query = (
+            self.collection.where(filter=firestore.FieldFilter("user_id", "==", user_id))
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .offset(offset)
+        )
+        docs = query.stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+
+    def get_chat(self, thread_id: str, user_id: str) -> dict | None:
+        """Fetches a specific chat by ID if it belongs to the user."""
+        doc_ref = self.collection.document(thread_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            data = doc.to_dict()
+            if data.get("user_id") == user_id:
+                return {"id": doc.id, **data}
+        return None
