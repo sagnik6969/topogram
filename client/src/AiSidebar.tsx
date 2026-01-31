@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Sidebar } from "@excalidraw/excalidraw";
-import { Send, Bot, LogOut } from "lucide-react";
+import { Send, Bot, LogOut, History, Plus } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import "./AiSidebar.css";
 import apiClient from "./api/axiosClient";
 import { Auth, useAuth } from "./Auth";
+import { ChatHistory, type ChatSession } from "./ChatHistory";
 
 interface Message {
   id: string;
@@ -34,6 +35,7 @@ export const AiSidebar = ({
       timestamp: Date.now(),
     },
   ]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -80,18 +82,35 @@ export const AiSidebar = ({
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setMessages([
-        {
-          // Reset messages on logout if desired
-          id: "1",
-          text: "Hello! I'm your AI assistant. How can I help you with your diagram today?",
-          sender: "ai",
-          timestamp: Date.now(),
-        },
-      ]);
+      startNewChat();
     } catch (error) {
       console.error("Error signing out: ", error);
     }
+  };
+
+  const startNewChat = () => {
+    setMessages([
+      {
+        id: "1",
+        text: "Hello! I'm your AI assistant. How can I help you with your diagram today?",
+        sender: "ai",
+        timestamp: Date.now(),
+      },
+    ]);
+    setIsHistoryOpen(false);
+  };
+
+  const handleSelectChat = (chat: ChatSession) => {
+    if (chat.checkpoint?.messages) {
+      const loadedMessages: Message[] = chat.checkpoint.messages.map((m, idx) => ({
+        id: m.id || `${chat.id}-${idx}`,
+        text: m.content,
+        sender: m.type === 'human' ? 'user' : 'ai',
+        timestamp: Date.now(), // Timestamps are not preserved in this view of history
+      }));
+      setMessages(loadedMessages);
+    }
+    setIsHistoryOpen(false);
   };
 
   return (
@@ -105,19 +124,41 @@ export const AiSidebar = ({
         <Sidebar.Header>
           <div className="ai-sidebar-header">
             <h3>AI Assistant</h3>
-            {user && (
-              <div className="ai-header-actions">
-                <button
-                  className="ai-logout-btn"
-                  onClick={handleLogout}
-                  title="Sign out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-            )}
+            <div className="ai-header-actions">
+              {user && (
+                <>
+                  <button
+                    className="ai-logout-btn"
+                    onClick={startNewChat}
+                    title="New Chat"
+                  >
+                    <Plus size={16} />
+                  </button>
+                  <button
+                    className="ai-logout-btn"
+                    onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                    title="Chat History"
+                  >
+                    <History size={16} />
+                  </button>
+                  <button
+                    className="ai-logout-btn"
+                    onClick={handleLogout}
+                    title="Sign out"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </Sidebar.Header>
+
+        <ChatHistory
+          isOpen={isHistoryOpen}
+          onClose={() => setIsHistoryOpen(false)}
+          onSelectChat={handleSelectChat}
+        />
 
         {!user ? (
           <Auth />
