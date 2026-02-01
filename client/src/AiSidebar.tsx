@@ -62,7 +62,14 @@ export const AiSidebar = ({
         excalidrawAPI.addFiles(response.data.files);
       }
       excalidrawAPI.updateScene(response.data);
+      setInput("");
     } catch (error) {
+      excalidrawAPI.setToast({
+        message: "Error generating diagram. Please try again after refreshing the page.",
+        closable: true,
+        duration: 10000,
+
+      })
       console.error("Error generating diagram:", error);
     } finally {
       setIsGenerating(false);
