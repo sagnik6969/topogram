@@ -105,7 +105,9 @@ class DiagramService:
                 p = section["startPoint"]
                 raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
                 for bp in section.get("bendPoints") or []:
-                    raw_points.append({"x": bp["x"] + offset_x, "y": bp["y"] + offset_y})
+                    raw_points.append(
+                        {"x": bp["x"] + offset_x, "y": bp["y"] + offset_y}
+                    )
                 p = section["endPoint"]
                 raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
 
@@ -410,8 +412,8 @@ class DiagramService:
                     # Place below icon
                     text_element_y = y + icon_size
             else:
-                # Center vertically in the box
-                text_element_y = y
+                text_element_x = x + (width - text_element_width) / 2
+                text_element_y = y + (height - text_element_height) / 2
 
             text_element = {
                 "id": text_element_id,
