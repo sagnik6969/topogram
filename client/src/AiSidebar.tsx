@@ -133,9 +133,6 @@ export const AiSidebar = ({
               </div>
 
               <div className="ai-generate-actions">
-                <div className="ai-model-selector">
-                  <span>Standard model</span>
-                </div>
                 <button
                   className="ai-generate-btn"
                   onClick={handleGenerate}
