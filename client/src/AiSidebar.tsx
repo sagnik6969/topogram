@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import { Sidebar } from "@excalidraw/excalidraw";
-import { Send, Bot, LogOut, History, Plus, Terminal } from "lucide-react";
+import {
+  LogOut,
+  Sparkles,
+  Plus,
+  Image as ImageIcon,
+  Wand2,
+  Copy,
+} from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import "./AiSidebar.css";
 import apiClient from "./api/axiosClient";
 import { Auth, useAuth } from "./Auth";
-import { ChatHistory, type ChatSession } from "./ChatHistory";
 
-interface Message {
+interface PromptHistoryItem {
   id: string;
-  text: string;
-  sender: "user" | "ai" | "tool";
-  name?: string;
+  prompt: string;
   timestamp: number;
 }
 
@@ -26,108 +30,61 @@ export const AiSidebar = ({
   setIsDocked: (isDocked: boolean) => void;
 }) => {
   const { user } = useAuth();
-
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I'm your AI assistant. How can I help you with your diagram today?",
-      sender: "ai",
-      timestamp: Date.now(),
-    },
-  ]);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [history, setHistory] = useState<PromptHistoryItem[]>([]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // We can keep track of session ID if needed, but for "Prompt History" view, we simply list local usages.
+  const [chatId, setChatId] = useState<string | null>(null);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, user]); // Scroll when messages change or user logs in (view changes)
-
-  const handleSend = async () => {
+  const handleGenerate = async () => {
     if (!input.trim()) return;
+    setIsGenerating(true);
 
-    const newMessage: Message = {
+    const newHistoryItem: PromptHistoryItem = {
       id: Date.now().toString(),
-      text: input,
-      sender: "user",
+      prompt: input,
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
-    setInput("");
+    // Add to history
+    setHistory((prev) => [newHistoryItem, ...prev]);
 
-    const response = await apiClient.post("/main_backend_service/v1/chat/", {
-      user_message: input,
-    });
+    try {
+      const response = await apiClient.post("/main_backend_service/v1/chat/", {
+        user_message: input,
+        thread_id: chatId,
+      });
 
-    excalidrawAPI.addFiles(response.data.files);
+      // Store chat ID if it's the first message
+      if (!chatId && response.data.thread_id) {
+        setChatId(response.data.thread_id);
+      }
 
-    excalidrawAPI.updateScene(response.data);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "Successfully generated the diagram!",
-        sender: "ai",
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+      if (response.data.files) {
+        excalidrawAPI.addFiles(response.data.files);
+      }
+      excalidrawAPI.updateScene(response.data);
+    } catch (error) {
+      console.error("Error generating diagram:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      startNewChat();
+      setHistory([]);
+      setInput("");
+      setChatId(null);
     } catch (error) {
       console.error("Error signing out: ", error);
     }
   };
 
-  const startNewChat = () => {
-    setMessages([
-      {
-        id: "1",
-        text: "Hello! I'm your AI assistant. How can I help you with your diagram today?",
-        sender: "ai",
-        timestamp: Date.now(),
-      },
-    ]);
-    setIsHistoryOpen(false);
-  };
-
-  const handleSelectChat = (chat: ChatSession) => {
-    if (chat.checkpoint?.messages) {
-      const loadedMessages: Message[] = chat.checkpoint.messages.map((m, idx) => ({
-        id: m.id || `${chat.id}-${idx}`,
-        text: m.content,
-        sender: m.type === 'human' ? 'user' : (m.type === 'tool' ? 'tool' : 'ai'),
-        name: m.name || (m.type === 'tool' ? 'Tool' : undefined),
-        timestamp: Date.now(), // Timestamps are not preserved in this view of history
-      }));
-      setMessages(loadedMessages);
-    }
-    setIsHistoryOpen(false);
-  };
-
-  const formatMessageContent = (text: string) => {
-    try {
-      // Check if it looks like JSON/Array before parsing to avoid parsing simple numbers/bools if unwanted
-      if ((text.trim().startsWith('{') || text.trim().startsWith('['))) {
-        const parsed = JSON.parse(text);
-        if (typeof parsed === 'object' && parsed !== null) {
-          return <div className="ai-code-block">{JSON.stringify(parsed, null, 2)}</div>;
-        }
-      }
-    } catch (e) {
-      // Not JSON
-    }
-    return text;
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
@@ -140,89 +97,88 @@ export const AiSidebar = ({
       <div className="ai-sidebar-container">
         <Sidebar.Header>
           <div className="ai-sidebar-header">
-            <h3>AI Assistant</h3>
-            <div className="ai-header-actions">
-              {user && (
-                <>
-                  <button
-                    className="ai-logout-btn"
-                    onClick={startNewChat}
-                    title="New Chat"
-                  >
-                    <Plus size={16} />
-                  </button>
-                  <button
-                    className="ai-logout-btn"
-                    onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-                    title="Chat History"
-                  >
-                    <History size={16} />
-                  </button>
-                  <button
-                    className="ai-logout-btn"
-                    onClick={handleLogout}
-                    title="Sign out"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </>
-              )}
-            </div>
+            <h3>Diagram Copilot</h3>
+            {user && (
+              <button
+                className="ai-logout-btn"
+                onClick={handleLogout}
+                title="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
+            )}
           </div>
         </Sidebar.Header>
-
-        <ChatHistory
-          isOpen={isHistoryOpen}
-          onClose={() => setIsHistoryOpen(false)}
-          onSelectChat={handleSelectChat}
-        />
 
         {!user ? (
           <Auth />
         ) : (
-          <>
-            <div className="ai-chat-messages">
-              {messages.map((msg) => {
-                // If message content is empty/blank, skip rendering
-                if (!msg.text) return null;
+          <div className="ai-content-wrapper">
+            <div className="ai-prompt-section">
+              <div className="ai-section-label">
+                <span>Diagram Generation Prompt</span>
+                <span className="ai-label-sub">Required</span>
+              </div>
 
-                return (
-                  <div key={msg.id} className={`ai-chat-message ${msg.sender}`}>
-                    {msg.sender === "ai" && (
-                      <div className="ai-message-sender-label">
-                        <Bot size={14} /> <span>AI Agent</span>
-                      </div>
-                    )}
-                    {msg.sender === "tool" && (
-                      <div className="tool-name-label">
-                        <Terminal size={14} /> <span>{msg.name || "Tool Output"}</span>
-                      </div>
-                    )}
-                    {formatMessageContent(msg.text)}
-                  </div>
-                )
-              })}
-              <div ref={messagesEndRef} />
+              <div className="ai-input-card">
+                <textarea
+                  className="ai-prompt-textarea"
+                  placeholder="Create a detailed aws architecture diagram for a hr ticketing system with user authentication, database, and notification services."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleGenerate();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="ai-generate-actions">
+                <div className="ai-model-selector">
+                  <span>Standard model</span>
+                </div>
+                <button
+                  className="ai-generate-btn"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !input.trim()}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Wand2 className="animate-spin" size={16} /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={16} /> Generate
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="ai-chat-input-area">
-              <input
-                type="text"
-                className="ai-chat-input"
-                placeholder="Type a message..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              />
-              <button
-                className="ai-chat-send-btn"
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                <Send size={18} />
-              </button>
-            </div>
-          </>
+            {history.length > 0 && (
+              <div className="ai-history-section">
+                <h4 className="ai-history-title">Prompt History</h4>
+                <div className="ai-history-list">
+                  {history.map((item) => (
+                    <div key={item.id} className="ai-history-item">
+                      <div className="ai-history-header">
+                        <p className="ai-history-text">{item.prompt}</p>
+                        <button
+                          className="ai-copy-btn"
+                          onClick={() => copyToClipboard(item.prompt)}
+                          title="Copy prompt"
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </Sidebar>
