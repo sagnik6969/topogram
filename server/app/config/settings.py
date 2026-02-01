@@ -1,4 +1,4 @@
-from pydantic import ConfigDict, SecretStr
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     CORES_ALLOWED_ORIGINS: str
-    MONGODB_URI: SecretStr
-    MONGODB_DB_NAME: str
     ELK_SERVICE_ENDPOINT: str
     DEFAULT_EXCALIDRAW_ELEMENT_WIDTH: int = 150
     DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT: int = 100

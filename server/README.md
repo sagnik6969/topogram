@@ -35,3 +35,13 @@ diagram-copilot/
 │ ├── pyproject.toml
 │ ├── run.py # Entry point (instead of main.py)
 │ └── README.md
+
+# Build and push the Docker image to ECR
+
+docker buildx build \
+ --platform linux/amd64 \
+ --provenance=false \
+ -t 499689292853.dkr.ecr.us-east-2.amazonaws.com/topogram-fastapi-backend-service:latest \
+ -f Dockerfile.lambda \
+ . \
+ --push
