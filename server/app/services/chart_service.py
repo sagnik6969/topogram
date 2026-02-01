@@ -18,8 +18,6 @@ class ChatService:
             checkpoint = LanggraphCheckpoints(session_id=thread_id, user_id=user_id)
             if not checkpoint.exists():
                 raise HTTPException(status_code=404, detail="Chat thread not found")
-
-            checkpoint.store_checkpoint({"messages": []})
         else:
             new_thread_id = str(uuid4())
 
@@ -35,7 +33,7 @@ class ChatService:
             checkpoint.get_checkpoint()
         )
         checkpoint.store_checkpoint(serialize_checkpoint(agent_response))
-        return excalidraw
+        return {"excalidraw": excalidraw, "thread_id": checkpoint.session_id}
 
     async def get_user_chats(
         self, user_id: str, limit: int = 20, offset: int = 0

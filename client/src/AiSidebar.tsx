@@ -58,10 +58,12 @@ export const AiSidebar = ({
         setChatId(response.data.thread_id);
       }
 
-      if (response.data.files) {
-        excalidrawAPI.addFiles(response.data.files);
+      if (response.data.excalidraw.files) {
+        excalidrawAPI.addFiles(response.data.excalidraw.files);
       }
-      excalidrawAPI.updateScene(response.data);
+      excalidrawAPI.resetScene()
+      excalidrawAPI.updateScene(response.data.excalidraw);
+      excalidrawAPI.scrollToContent()
       setInput("");
     } catch (error) {
       excalidrawAPI.setToast({
