@@ -1,10 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "@excalidraw/excalidraw";
 import {
   LogOut,
-  Sparkles,
-  Plus,
-  Image as ImageIcon,
   Wand2,
   Copy,
 } from "lucide-react";
