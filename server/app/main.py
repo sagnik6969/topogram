@@ -7,7 +7,8 @@ from firebase_admin import initialize_app, delete_app
 from utils.auth import authenticate_user
 from fastapi.middleware.cors import CORSMiddleware
 from langfuse import get_client
-
+import redis
+from fastapi import HTTPException
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -53,7 +54,13 @@ app.include_router(v1_router)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    try:
+        r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD.get_secret_value(), socket_connect_timeout=3,retry_on_timeout=True)
+        if r.ping():
+            return {"status": "success", "message": f"Connected to Redis at {settings.REDIS_HOST}"}
+    except redis.ConnectionError as e:
+        raise HTTPException(status_code=500, detail=f"Redis connection failed: {str(e)}")
+        logger.exception(e)
 
 
 if __name__ == "__main__":

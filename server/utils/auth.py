@@ -6,6 +6,8 @@ security = HTTPBearer(auto_error=False)
 
 
 def authenticate_user(request: Request, token=Depends(security)) -> bool:
+    if(request.url.path == '/main_backend_service/health'):
+        return True
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
