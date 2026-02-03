@@ -70,7 +70,7 @@ app.include_router(v1_router)
 
 
 @app.get("/health")
-# @limiter.exempt
+@limiter.exempt
 async def health_check():
     try:
         r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD.get_secret_value(), socket_connect_timeout=3,retry_on_timeout=True)
