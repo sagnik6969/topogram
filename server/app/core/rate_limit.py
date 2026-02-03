@@ -28,5 +28,6 @@ limiter = Limiter(
     storage_uri=redis_url,
     strategy="fixed-window",
     enabled=settings.RATE_LIMIT_ENABLED,
-    default_limits=["1/minute"]
+    default_limits=["100/minute"],
+    application_limits=["1/minute"]
 )
