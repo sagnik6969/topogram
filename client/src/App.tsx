@@ -21,7 +21,7 @@ function App() {
         width: "100%",
         overflow: "hidden",
       }}
-    >Í
+    >
       <Toaster position="top-right" richColors closeButton />
       <Excalidraw
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
