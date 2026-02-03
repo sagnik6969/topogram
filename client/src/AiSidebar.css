@@ -117,6 +117,14 @@
   color: #9ca3af;
 }
 
+.ai-char-counter {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: right;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
 .ai-input-footer {
   display: flex;
   justify-content: space-between;
