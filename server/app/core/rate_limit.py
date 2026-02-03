@@ -4,7 +4,6 @@ from starlette.requests import Request
 from app.config.settings import settings
 from fastapi import HTTPException, Depends
 
-
 def get_user_id(request: Request) -> str:
     """
     Extracts the user ID from the request state.
@@ -28,6 +27,6 @@ limiter = Limiter(
     storage_uri=redis_url,
     strategy="fixed-window",
     enabled=settings.RATE_LIMIT_ENABLED,
-    default_limits=["100/minute"],
-    application_limits=["1/minute"]
+    default_limits=settings.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS,
+    application_limits=settings.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER
 )
