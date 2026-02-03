@@ -5,8 +5,8 @@ from app.config.settings import settings
 from app.core.rate_limit import limiter
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-# @limiter.limit(settings.DEFAULT_CHAT_RATE_LIMITS_PER_USER)
 @router.post("/")
+@limiter.limit("; ".join(settings.DEFAULT_CHAT_RATE_LIMITS_PER_USER))
 async def chat_endpoint(
     request: Request,
     chat_request: ChatRequest,
