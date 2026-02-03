@@ -7,7 +7,6 @@ import "./AiSidebar.css";
 import apiClient from "./api/axiosClient";
 import { Auth, useAuth } from "./Auth";
 import { toast } from "sonner";
-import type { AxiosError } from "axios";
 
 interface PromptHistoryItem {
   id: string;
@@ -137,7 +136,11 @@ export const AiSidebar = ({
                       handleGenerate();
                     }
                   }}
+                  maxLength={500}
                 />
+                <div className="ai-char-counter">
+                  {input.length}/500
+                </div>
               </div>
 
               <div className="ai-generate-actions">
