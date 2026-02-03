@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY: int = 5
     DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO: float = 0.54
     DEFAULT_CHAT_MODEL_NAME: str = "google_genai:gemini-2.5-flash"
+    RATE_LIMIT_ENABLED: bool = True
 
     model_config = ConfigDict(env_file=".env", case_sensitive=True, extra="allow")
 

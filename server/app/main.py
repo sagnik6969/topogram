@@ -1,6 +1,6 @@
+import logging
 from fastapi import FastAPI, Depends
 from app.api.v1 import router as v1_router
-import logging
 from app.config.settings import settings
 from contextlib import asynccontextmanager
 from firebase_admin import initialize_app, delete_app
@@ -9,6 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from langfuse import get_client
 import redis
 from fastapi import HTTPException
+from app.core.rate_limit import limiter, get_user_id
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -38,8 +41,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     root_path="/main_backend_service",
     lifespan=lifespan,
-    dependencies=[Depends(authenticate_user)],
+    dependencies=[
+        Depends(authenticate_user),
+        # Global DDoS Protection: 100 requests per minute per IP
+        Depends(limiter.limit("100/minute")),
+        # Per-User Rate Limit: 1000 requests per hour per user
+        Depends(limiter.limit("1000/hour", key_func=get_user_id)),
+    ],
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
