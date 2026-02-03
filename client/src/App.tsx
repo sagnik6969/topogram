@@ -5,10 +5,12 @@ import "./App.css";
 import { IconsSidebar } from "./IconsSidebar";
 import { AiSidebar } from "./AiSidebar";
 import { Brain, Github, Linkedin } from "lucide-react";
+import { Toaster } from "sonner";
 
 function App() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
-  const [isIconsSidebarDocked, setIsIconsSidebarDocked] = useState<boolean>(false);
+  const [isIconsSidebarDocked, setIsIconsSidebarDocked] =
+    useState<boolean>(false);
   const [isAiSidebarDocked, setIsAiSidebarDocked] = useState<boolean>(false);
 
   return (
@@ -19,7 +21,8 @@ function App() {
         width: "100%",
         overflow: "hidden",
       }}
-    >
+    >Í
+      <Toaster position="top-right" richColors closeButton />
       <Excalidraw
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
         renderTopRightUI={() => (
@@ -40,18 +43,33 @@ function App() {
             <MainMenu.DefaultItems.ToggleTheme />
           </MainMenu.Group>
           <MainMenu.Group title="Socials">
-            <MainMenu.ItemLink icon={<Github />} href="https://github.com/sagnik6969" target="_blank">
+            <MainMenu.ItemLink
+              icon={<Github />}
+              href="https://github.com/sagnik6969"
+              target="_blank"
+            >
               GitHub
             </MainMenu.ItemLink>
-            <MainMenu.ItemLink icon={<Linkedin />} href="https://www.linkedin.com/in/sagnik-jana-3452771ba/" target="_blank">
+            <MainMenu.ItemLink
+              icon={<Linkedin />}
+              href="https://www.linkedin.com/in/sagnik-jana-3452771ba/"
+              target="_blank"
+            >
               Linkedin
             </MainMenu.ItemLink>
           </MainMenu.Group>
           <MainMenu.DefaultItems.ChangeCanvasBackground />
         </MainMenu>
         <IconsSidebar
-          excalidrawAPI={excalidrawAPI} isDocked={isIconsSidebarDocked} setIsDocked={setIsIconsSidebarDocked} />
-        <AiSidebar excalidrawAPI={excalidrawAPI} isDocked={isAiSidebarDocked} setIsDocked={setIsAiSidebarDocked} />
+          excalidrawAPI={excalidrawAPI}
+          isDocked={isIconsSidebarDocked}
+          setIsDocked={setIsIconsSidebarDocked}
+        />
+        <AiSidebar
+          excalidrawAPI={excalidrawAPI}
+          isDocked={isAiSidebarDocked}
+          setIsDocked={setIsAiSidebarDocked}
+        />
       </Excalidraw>
     </div>
   );

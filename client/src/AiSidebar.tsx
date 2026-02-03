@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { Sidebar } from "@excalidraw/excalidraw";
-import {
-  LogOut,
-  Wand2,
-  Copy,
-} from "lucide-react";
+import { LogOut, Wand2, Copy } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "./firebase";
 import "./AiSidebar.css";
 import apiClient from "./api/axiosClient";
 import { Auth, useAuth } from "./Auth";
+import { toast } from "sonner";
+import type { AxiosError } from "axios";
 
 interface PromptHistoryItem {
   id: string;
@@ -44,9 +42,6 @@ export const AiSidebar = ({
       timestamp: Date.now(),
     };
 
-    // Add to history
-    setHistory((prev) => [newHistoryItem, ...prev]);
-
     try {
       const response = await apiClient.post("/main_backend_service/v1/chat/", {
         user_message: input,
@@ -61,17 +56,21 @@ export const AiSidebar = ({
       if (response.data.excalidraw.files) {
         excalidrawAPI.addFiles(response.data.excalidraw.files);
       }
-      excalidrawAPI.resetScene()
+      excalidrawAPI.resetScene();
       excalidrawAPI.updateScene(response.data.excalidraw);
-      excalidrawAPI.scrollToContent()
+      excalidrawAPI.scrollToContent();
       setInput("");
-    } catch (error) {
-      excalidrawAPI.setToast({
-        message: "Error generating diagram. Please try again after refreshing the page.",
-        closable: true,
-        duration: 10000,
+      // Add to history
+      setHistory((prev) => [newHistoryItem, ...prev]);
+    } catch (error: any) {
+      if (error?.response?.status === 429) {
+        const errorMessage = error.response?.data?.error ?? "Too many requests. Please try again after some time.";
+        toast.error(errorMessage);
+      }
+      else toast.error(
+        "Error generating diagram. Please try again after refreshing the page.",
+      );
 
-      })
       console.error("Error generating diagram:", error);
     } finally {
       setIsGenerating(false);
