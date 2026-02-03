@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langfuse import get_client
 import redis
 from fastapi import HTTPException
-from app.core.rate_limit import limiter, check_user_rate_limit
+from app.core.rate_limit import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
@@ -44,14 +44,11 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[
         Depends(authenticate_user),
-        # Per-User Rate Limit (manually checked dependency)
-        Depends(check_user_rate_limit),
     ],
 )
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-# Global IP Limit is handled by SlowAPI middleware via default_limits
 app.add_middleware(SlowAPIASGIMiddleware)
 
 app.add_middleware(
