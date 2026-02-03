@@ -9,9 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from langfuse import get_client
 import redis
 from fastapi import HTTPException
-from app.core.rate_limit import limiter, get_user_id
+from app.core.rate_limit import limiter, check_user_rate_limit
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIASGIMiddleware
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -43,15 +44,15 @@ app = FastAPI(
     lifespan=lifespan,
     dependencies=[
         Depends(authenticate_user),
-        # Global DDoS Protection: 100 requests per minute per IP
-        Depends(limiter.limit("100/minute")),
-        # Per-User Rate Limit: 1000 requests per hour per user
-        Depends(limiter.limit("1000/hour", key_func=get_user_id)),
+        # Per-User Rate Limit (manually checked dependency)
+        Depends(check_user_rate_limit),
     ],
 )
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Global IP Limit is handled by SlowAPI middleware via default_limits
+app.add_middleware(SlowAPIASGIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
