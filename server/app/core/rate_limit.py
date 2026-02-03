@@ -11,6 +11,7 @@ def get_user_id(request: Request) -> str:
     and populated `request.state.uid`.
     If no user ID is found (e.g., public endpoint), it falls back to IP.
     """
+    print("rate limit")
     if hasattr(request.state, "uid"):
         return str(request.state.uid)
     return get_remote_address(request)

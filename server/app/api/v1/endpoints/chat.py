@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Request
 from app.api.v1.schemas.chat import ChatRequest
 from app.services.chart_service import get_chat_service, ChatService
-
+from app.config.settings import settings
+from app.core.rate_limit import limiter
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-
+# @limiter.limit(settings.DEFAULT_CHAT_RATE_LIMITS_PER_USER)
 @router.post("/")
 async def chat_endpoint(
     request: Request,
