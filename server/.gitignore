@@ -1,6 +1,5 @@
 .venv
 .vscode
-uv.lock
 __pycache__
 .env
 service-accounts
