@@ -1,0 +1,9 @@
+/* Override the sidebar width */
+
+.excalidraw .sidebar.ai-sidebar {
+  width: 400px !important;
+}
+
+label[title="Library"] {
+  display: none;
+}

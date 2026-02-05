@@ -1,4 +1,10 @@
+from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+from pydantic import SecretStr
+from typing import Optional, List
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -6,7 +12,15 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    MERMAID_TO_JSON_SERVICE_ENDPOINT: str
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_PASSWORD: SecretStr
+    CORES_ALLOWED_ORIGINS: str
+    ELK_SERVICE_ENDPOINT: str
+    RATE_LIMIT_ENABLED: bool = True
+    DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER: List[str] = []
+    DEFAULT_CHAT_RATE_LIMITS_PER_USER:List[str] = []
+    DEFAULT_RATE_LIMITS_FOR_ENDPOINTS:List[str] = []
     DEFAULT_EXCALIDRAW_ELEMENT_WIDTH: int = 150
     DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT: int = 100
     DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR: str = "#1e1e1e"
@@ -14,10 +28,28 @@ class Settings(BaseSettings):
     DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT: float = 1.25
     DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY: int = 5
     DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO: float = 0.54
+    DEFAULT_CHAT_MODEL_NAME: str = "google_genai:gemini-2.5-flash"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = ConfigDict(env_file=".env", case_sensitive=True, extra="allow")
+
+    @model_validator(mode="after")
+    def validate_rate_limit_settings(self):
+        """Validate that rate limit settings are provided when rate limiting is enabled."""
+        if self.RATE_LIMIT_ENABLED:
+            missing_fields = []
+            if not self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER or len(self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER) == 0:
+                missing_fields.append("DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER")
+            if not self.DEFAULT_CHAT_RATE_LIMITS_PER_USER or len(self.DEFAULT_CHAT_RATE_LIMITS_PER_USER) == 0:
+                missing_fields.append("DEFAULT_CHAT_RATE_LIMITS_PER_USER")
+            if not self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS or len(self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS) == 0:
+                missing_fields.append("DEFAULT_RATE_LIMITS_FOR_ENDPOINTS")
+            
+            if missing_fields:
+                raise ValueError(
+                    f"When RATE_LIMIT_ENABLED is True, the following fields are required: {', '.join(missing_fields)}"
+                )
+        
+        return self
 
 
 settings = Settings()

@@ -1,10 +1,13 @@
 from typing import Dict, List, Any, TypedDict
-from collections import deque
 from app.config.settings import settings
-import httpx
 from uuid import uuid4
-from app.exceptions.diagrams import MermaidConversionError
-from app.constants.diagrams import mermaid_to_excalidraw_shape_map
+import httpx
+import json
+import os
+from app.agents.elk_input_graph_generator_agent.agent import (
+    agent as elk_input_graph_generator_agent,
+)
+from langfuse.langchain import CallbackHandler
 
 
 class DiagramType(TypedDict):
@@ -30,32 +33,239 @@ class Graph(TypedDict):
 
 
 class DiagramService:
-    async def convert_mermaid_to_excalidraw(self, mermaid_code: str) -> dict:
-        converted_mermaid_json = await self.convert_mermaid_to_json(mermaid_code)
-        level_order_traversal = self.get_level_order_traversal(
-            converted_mermaid_json,
-            start_node_id=list(converted_mermaid_json["nodes"].keys())[0],
+    def __init__(self):
+        base_path = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
+        icons_path = os.path.join(base_path, "app", "assets", "aws_icons.json")
+        try:
+            with open(icons_path, "r") as f:
+                self.aws_icons = {icon["id"]: icon for icon in json.load(f)}
+        except Exception:
+            self.aws_icons = {}
 
+    def _convert_elk_elements_to_excalidraw_elements(
+        self,
+        elk_elements: list[dict],
+        files: dict,
+        parent_x: float = 0,
+        parent_y: float = 0,
+    ) -> list[dict]:
         excalidraw_elements = []
 
-        for level_index, level in enumerate(level_order_traversal):
-            for node_index, node in enumerate(level):
-                x = node_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH + 50) + 50
-                y = (
-                    level_index * (settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT + 100)
-                    + 50
+        for elk_element in elk_elements:
+            if "offset" in elk_element:
+                x = elk_element["offset"]["posX"]
+                y = elk_element["offset"]["posY"]
+            else:
+                x = parent_x + elk_element.get("x", 0)
+                y = parent_y + elk_element.get("y", 0)
+
+            width = elk_element.get("width", 0)
+            height = elk_element.get("height", 0)
+            node = {
+                "id": elk_element["id"],
+                "text": elk_element.get("text"),
+                "icon_id": elk_element.get("icon_id"),
+                "shape": "rectangle",
+            }
+            is_container = bool(elk_element.get("children", []))
+            excalidraw_elements_in_current_step = (
+                self.convert_graph_node_to_excalidraw_elements(
+                    node, x, y, height, width, files, is_container=is_container
                 )
-                excalidraw_elements_in_current_step = (
-                    self.convert_graph_node_to_excalidraw_elements(
-                        node,
-                        x,
-                        y,
-                        settings.DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT,
-                        settings.DEFAULT_EXCALIDRAW_ELEMENT_WIDTH,
+            )
+            excalidraw_elements.extend(excalidraw_elements_in_current_step)
+
+            child_elements = elk_element.get("children", [])
+            if child_elements:
+                excalidraw_elements.extend(
+                    self._convert_elk_elements_to_excalidraw_elements(
+                        child_elements, files, x, y
                     )
                 )
-                excalidraw_elements.extend(excalidraw_elements_in_current_step)
+        return excalidraw_elements
+
+    def _convert_elk_edges_to_excalidraw_elements(
+        self, elk_edges: list[dict], node_map: dict = None
+    ) -> list[dict]:
+        excalidraw_edges = []
+        for edge in elk_edges:
+            raw_points = []
+
+            offset_x = 0
+            offset_y = 0
+            container_id = edge.get("container")
+            if container_id and node_map and container_id in node_map:
+                container = node_map[container_id]
+                offset_x = container["x"]
+                offset_y = container["y"]
+
+            for section in edge.get("sections", []):
+                p = section["startPoint"]
+                raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
+                for bp in section.get("bendPoints") or []:
+                    raw_points.append(
+                        {"x": bp["x"] + offset_x, "y": bp["y"] + offset_y}
+                    )
+                p = section["endPoint"]
+                raw_points.append({"x": p["x"] + offset_x, "y": p["y"] + offset_y})
+
+            if not raw_points:
+                continue
+
+            start_point = raw_points[0]
+            start_x = start_point["x"]
+            start_y = start_point["y"]
+
+            processed_points = [
+                [p["x"] - start_x, p["y"] - start_y] for p in raw_points
+            ]
+
+            xs = [p[0] for p in processed_points]
+            ys = [p[1] for p in processed_points]
+            width = max(xs) - min(xs)
+            height = max(ys) - min(ys)
+
+            excalidraw_edge = {
+                "id": edge.get("id", str(uuid4())),
+                "type": "arrow",
+                "x": start_x,
+                "y": start_y,
+                "width": width,
+                "height": height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 0,
+                "opacity": 100,
+                "groupIds": [],
+                "frameId": None,
+                "roundness": None,
+                "seed": 2052841052,
+                "version": 1,
+                "versionNonce": 0,
+                "isDeleted": False,
+                "boundElements": None,
+                "updated": 1768666473949,
+                "link": None,
+                "locked": False,
+                "points": processed_points,
+                "startBinding": None,
+                "endBinding": None,
+                "startArrowhead": None,
+                "endArrowhead": "arrow",
+                "elbowed": True,
+            }
+
+            if edge.get("sources"):
+                source_id = edge["sources"][0]
+                start_binding = {
+                    "elementId": source_id,
+                    "mode": "orbit",
+                    "fixedPoint": None,
+                }
+
+                if node_map and source_id in node_map and raw_points:
+                    start_p = raw_points[0]
+                    node = node_map[source_id]
+                    # Ensure node width/height are non-zero to avoid division by zero
+                    if node["width"] > 0 and node["height"] > 0:
+                        fx = (start_p["x"] - node["x"]) / node["width"]
+                        fy = (start_p["y"] - node["y"]) / node["height"]
+
+                        if fx == 0:
+                            fx = -0.03
+                            excalidraw_edge["x"] -= 0.03 * node["width"]
+                            excalidraw_edge["points"][-1][0] += 0.03 * node["width"]
+                        elif fx == 1:
+                            fx = 1.03
+                            excalidraw_edge["x"] += 0.03 * node["width"]
+                            excalidraw_edge["points"][-1][0] -= 0.03 * node["width"]
+
+                        if fy == 0:
+                            fy = -0.03
+                            excalidraw_edge["y"] -= 0.03 * node["height"]
+                            excalidraw_edge["points"][-1][1] += 0.03 * node["height"]
+                        elif fy == 1:
+                            fy = 1.03
+                            excalidraw_edge["y"] += 0.03 * node["height"]
+                            excalidraw_edge["points"][-1][1] -= 0.03 * node["height"]
+                        start_binding["fixedPoint"] = [fx, fy]
+
+                excalidraw_edge["startBinding"] = start_binding
+
+            if edge.get("targets"):
+                target_id = edge["targets"][0]
+                end_binding = {
+                    "elementId": target_id,
+                    "mode": "orbit",
+                    "fixedPoint": None,
+                }
+                # Calculate fixed point for end
+                if node_map and target_id in node_map and raw_points:
+                    end_p = raw_points[-1]
+                    node = node_map[target_id]
+                    if node["width"] > 0 and node["height"] > 0:
+                        fx = (end_p["x"] - node["x"]) / node["width"]
+                        fy = (end_p["y"] - node["y"]) / node["height"]
+
+                        if fx == 0:
+                            fx = -0.03
+                            excalidraw_edge["points"][-1][0] -= 0.03 * node["width"]
+                        elif fx == 1:
+                            fx = 1.03
+                            excalidraw_edge["points"][-1][0] += 0.03 * node["width"]
+
+                        if fy == 0:
+                            fy = -0.03
+                            excalidraw_edge["points"][-1][1] -= 0.03 * node["height"]
+                        elif fy == 1:
+                            fy = 1.03
+                            excalidraw_edge["points"][-1][1] += 0.03 * node["height"]
+
+                        end_binding["fixedPoint"] = [fx, fy]
+
+                excalidraw_edge["endBinding"] = end_binding
+
+            excalidraw_edges.append(excalidraw_edge)
+
+        return excalidraw_edges
+
+    def convert_elk_json_to_excalidraw(self, elk_json: dict) -> dict:
+        files = {}
+        excalidraw_elements = self._convert_elk_elements_to_excalidraw_elements(
+            elk_json.get("children", []), files
+        )
+
+        node_map = {node["id"]: node for node in excalidraw_elements}
+
+        excalidraw_edges = self._convert_elk_edges_to_excalidraw_elements(
+            elk_json.get("edges", []), node_map
+        )
+
+        for edge in excalidraw_edges:
+            edge_id = edge["id"]
+            if edge.get("startBinding"):
+                start_node_id = edge["startBinding"]["elementId"]
+                if start_node_id in node_map:
+                    node = node_map[start_node_id]
+                    if "boundElements" not in node or node["boundElements"] is None:
+                        node["boundElements"] = []
+                    node["boundElements"].append({"id": edge_id, "type": "arrow"})
+
+            if edge.get("endBinding"):
+                end_node_id = edge["endBinding"]["elementId"]
+                if end_node_id in node_map:
+                    node = node_map[end_node_id]
+                    if "boundElements" not in node or node["boundElements"] is None:
+                        node["boundElements"] = []
+                    node["boundElements"].append({"id": edge_id, "type": "arrow"})
+
+        excalidraw_elements.extend(excalidraw_edges)
 
         return {
             "type": "excalidraw",
@@ -69,112 +279,143 @@ class DiagramService:
                 "viewBackgroundColor": "#ffffff",
                 "lockedMultiSelections": {},
             },
-            "files": {},
+            "files": files,
         }
-
-    async def convert_mermaid_to_json(self, mermaid_code: str) -> Graph:
-        url = settings.MERMAID_TO_JSON_SERVICE_ENDPOINT
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(url, json={"diagram": mermaid_code})
-                response.raise_for_status()
-                graph_json = response.json()
-                return graph_json
-            except httpx.HTTPError as e:
-                raise MermaidConversionError(
-                    response.json() if response else str(e),
-                    response.status_code if response else 500,
-                )
-
-    def get_level_order_traversal(
-        self, graph: Graph, start_node_id: str
-    ) -> List[List[Node]]:
-        if not graph or not start_node_id:
-            return []
-
-        nodes = graph.get("nodes", {})
-        edges = graph.get("edges", [])
-
-        # Build adjacency list
-        adj = {}
-        for edge in edges:
-            u, v = edge.get("from"), edge.get("to")
-            if u and v:
-                if u not in adj:
-                    adj[u] = []
-                adj[u].append(v)
-
-        queue = deque([(start_node_id, 0)])
-        visited = {start_node_id}
-        result = []
-
-        while queue:
-            node_id, level = queue.popleft()
-
-            # Ensure result list is large enough
-            if len(result) <= level:
-                result.append([])
-
-            if node_id in nodes:
-                result[level].append(nodes[node_id])
-
-            if node_id in adj:
-                for neighbor in adj[node_id]:
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append((neighbor, level + 1))
-
-        return result
-
-    def map_mermaid_shape_to_excalidraw(self, mermaid_shape: str) -> str:
-        return mermaid_to_excalidraw_shape_map.get(mermaid_shape, "rectangle")
 
     def convert_graph_node_to_excalidraw_elements(
-        self, node: Node, x: int, y: int, height: int, width: int
+        self,
+        node: Node,
+        x: int,
+        y: int,
+        height: int,
+        width: int,
+        files: dict,
+        is_container: bool = False,
     ) -> list[dict]:
-        shape = {
-            "id": node["id"],
-            "type": self.map_mermaid_shape_to_excalidraw(node["shape"]),
-            "x": x,
-            "y": y,
-            "width": width,
-            "height": height,
-            "angle": 0,
-            "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
-            "backgroundColor": "transparent",
-            "fillStyle": "solid",
-            "strokeWidth": 2,
-            "strokeStyle": "solid",
-            "roughness": 1,
-            "opacity": 100,
-            "groupIds": [],
-            "frameId": None,
-            "index": "a0",
-            "roundness": {"type": 3},
-            "seed": 926821016,
-            "version": 66,
-            "versionNonce": 750530792,
-            "isDeleted": False,
-            "updated": 1768110275345,
-            "link": None,
-            "locked": False,
-        }
+        elements = []
+        icon_id = node.get("icon_id")
+        text_content = node.get("text")
+        group_id = str(uuid4())
 
-        if node["label"]:
+        # 1. Determine layout configuration
+        has_valid_icon = icon_id and icon_id in self.aws_icons
+        should_render_rect = is_container or not has_valid_icon
+        icon_size = 32 if is_container else 128
+
+        # 2. Render Container Border / Fallback Shape
+        # Render a rectangle if it's a container (border) or if there's no icon (fallback)
+        if should_render_rect:
+            shape = {
+                "id": node["id"],
+                "type": "rectangle",
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "angle": 0,
+                "strokeColor": settings.DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR,
+                "backgroundColor": "transparent",
+                "fillStyle": "solid",
+                "strokeWidth": 2,
+                "strokeStyle": "solid",
+                "roughness": 0,
+                "opacity": 100,
+                "groupIds": [group_id],
+                "frameId": None,
+                "index": "a0",
+                "roundness": None,
+                "seed": 926821016,
+                "version": 66,
+                "versionNonce": 750530792,
+                "isDeleted": False,
+                "updated": 1768110275345,
+                "link": None,
+                "locked": False,
+            }
+            elements.append(shape)
+
+        # 3. Render Icon if available
+        if has_valid_icon:
+            icon_data = self.aws_icons[icon_id]
+            file_id = str(uuid4())
+            # Excalidraw expects "dataURL" in files
+            files[file_id] = {
+                "id": file_id,
+                "dataURL": icon_data["url"],
+                "mimeType": "image/svg+xml",
+                "created": 1768110275345,  # Dummy timestamp
+                "lastRetrieved": 1768110275345,
+            }
+
+            image_element = {
+                "id": str(uuid4()) if should_render_rect else node["id"],
+                "type": "image",
+                "x": x,  # Top aligned
+                "y": y,  # Left aligned
+                "width": icon_size,
+                "height": icon_size,
+                "angle": 0,
+                "strokeColor": "transparent",
+                "backgroundColor": "transparent",
+                "fillStyle": "hachure",
+                "strokeWidth": 1,
+                "strokeStyle": "solid",
+                "roughness": 0,
+                "opacity": 100,
+                "groupIds": [group_id],
+                "frameId": None,
+                "roundness": None,
+                "seed": 926821016,
+                "version": 66,
+                "versionNonce": 750530792,
+                "isDeleted": False,
+                "boundElements": None,
+                "updated": 1768110275345,
+                "link": None,
+                "locked": False,
+                "fileId": file_id,
+                "status": "saved",
+                "scale": [1, 1],
+            }
+            elements.append(image_element)
+
+        # 4. Render Text if available
+        if text_content:
             text_element_id = str(uuid4())
+
+            # Re-calculate text dimensions to position it
+            font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+            line_height = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
+
+            # Using the pre-formatted text with newlines from process_node
+            lines = text_content.split("\n")
+            num_lines = len(lines)
+            max_line_chars = max([len(line) for line in lines]) if lines else 0
+
             text_element_width = (
-                len(node["label"])
-                * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+                max_line_chars
+                * font_size
                 * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO
             )
-            text_element_height = (
-                settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
-                * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
-            )
-            text_element_x = x + width / 2 - text_element_width / 2
-            text_element_y = y + height / 2 - text_element_height / 2
-            shape["boundElements"] = [{"type": "text", "id": text_element_id}]
-            text = {
+            text_element_height = num_lines * font_size * line_height
+
+            # Center text horizontally by default
+            text_element_x = x
+
+            if has_valid_icon:
+                if is_container:
+                    # Place to the right of the icon
+                    text_element_x = x + icon_size + 8
+                    # Center vertically relative to the icon
+                    text_element_y = y + (icon_size / 2) - (text_element_height / 2)
+                else:
+                    # Place below icon
+                    text_element_y = y + icon_size
+            else:
+                text_element_x = x + (width - text_element_width) / 2
+                text_element_y = y + (height - text_element_height) / 2
+
+            text_element = {
                 "id": text_element_id,
                 "type": "text",
                 "x": text_element_x,
@@ -187,9 +428,9 @@ class DiagramService:
                 "fillStyle": "solid",
                 "strokeWidth": 2,
                 "strokeStyle": "solid",
-                "roughness": 1,
+                "roughness": 0,
                 "opacity": 100,
-                "groupIds": [],
+                "groupIds": [group_id],
                 "frameId": None,
                 "index": "a1",
                 "roundness": None,
@@ -201,15 +442,188 @@ class DiagramService:
                 "updated": 1768110277987,
                 "link": None,
                 "locked": False,
-                "text": node["label"],
-                "fontSize": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE,
+                "text": text_content,
+                "fontSize": font_size,
                 "fontFamily": settings.DEFAULT_EXCALIDRAW_ELEMENT_FONT_FAMILY,
-                "textAlign": "center",
+                "textAlign": "left" if is_container and has_valid_icon else "center",
                 "verticalAlign": "middle",
-                "containerId": node["id"],
-                "originalText": node["label"],
+                "containerId": node["id"]
+                if should_render_rect
+                else None,  # Only bind if it's inside a container shape
+                "originalText": text_content,
                 "autoResize": True,
-                "lineHeight": settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT,
+                "lineHeight": line_height,
             }
-            return [shape, text]
-        return [shape]
+
+            # If we created a container/fallback shape, bind text to it
+            if should_render_rect and len(elements) > 0:
+                elements[0]["boundElements"] = [{"type": "text", "id": text_element_id}]
+
+            elements.append(text_element)
+
+        return elements
+
+    def convert_agent_response_to_elk_json(self, agent_response: dict) -> dict:
+        nodes = agent_response.get("nodes", [])
+        edges = agent_response.get("edges", [])
+
+        node_map = {}
+        # First pass: create all nodes
+        for node_data in nodes:
+            node_map[node_data["id"]] = {
+                "id": node_data["id"],
+                "text": node_data.get("text"),
+                "icon_id": node_data.get("icon_id"),
+                "children": [],
+            }
+
+        # Second pass: build hierarchy
+        non_root_ids = set()
+        for node_data in nodes:
+            parent_id = node_data["id"]
+            children_ids = node_data.get("children_ids", [])
+            for child_id in children_ids:
+                if child_id in node_map:
+                    node_map[parent_id]["children"].append(node_map[child_id])
+                    non_root_ids.add(child_id)
+
+        # Collect roots
+        root_nodes = [node for nid, node in node_map.items() if nid not in non_root_ids]
+
+        return {"id": "root", "children": root_nodes, "edges": edges}
+
+    async def generate_elk_json_input_using_agent(self, graph_state: dict) -> dict:
+        callback_handler = CallbackHandler()
+        agent_response = await elk_input_graph_generator_agent.ainvoke(
+            graph_state, config={"callbacks": [callback_handler]}
+        )
+        graph_dict = agent_response["structured_response"].model_dump(mode="json")
+
+        elk_graph = self.convert_agent_response_to_elk_json(graph_dict)
+
+        base_layout_options = {
+            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+            "elk.algorithm": "elk.layered",
+            "nodePlacement.strategy": "BRANDES_KOEPF",
+            "elk.layered.mergeEdges": False,
+            "elk.direction": "RIGHT",
+            "spacing.baseValue": 80,
+            "elk.layered.crossingMinimization.forceNodeModelOrder": False,
+            "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",
+            "elk.layered.unnecessaryBendpoints": True,
+            "elk.layered.wrapping.multiEdge.improveCuts": True,
+            "elk.layered.wrapping.multiEdge.improveWrappedEdges": True,
+            "elk.layered.edgeRouting.selfLoopDistribution": "EQUALLY",
+            "elk.layered.mergeHierarchyEdges": True,
+        }
+
+        elk_graph["layoutOptions"] = base_layout_options
+
+        def process_node(node: dict):
+            # Check if leaf (no children or empty children list)
+            children = node.get("children")
+            is_leaf = not children
+
+            # 3. Each element should have padding
+            # Remove padding from leaf nodes as per user request
+            padding = 0 if is_leaf else 50
+
+            top_padding = padding
+            if not is_leaf and node.get("icon_id"):
+                top_padding = 100  # 32 icon + 12 padding
+
+            node.setdefault("layoutOptions", {})
+            node["layoutOptions"]["elk.padding"] = (
+                f"[top={top_padding},left={padding},bottom={padding},right={padding}]"
+            )
+            node["layoutOptions"]["elk.spacing.nodeNode"] = 50
+            node["layoutOptions"]["elk.layered.spacing.nodeNodeBetweenLayers"] = 100
+
+            if is_leaf:
+                # 2. For each leaf node add its height and width.
+                icon_dim = 128
+                text = node.get("text")
+
+                width = icon_dim
+                height = icon_dim
+
+                if text:
+                    font_size = settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_SIZE
+                    # Text should be wrapped if it goes outside the icon width
+                    max_width = icon_dim
+                    char_width = (
+                        font_size
+                        * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_FONT_TO_WIDTH_RATIO
+                    )
+                    # avoid division by zero
+                    chars_per_line = (
+                        int(max_width / char_width) if char_width > 0 else 1
+                    )
+
+                    words = text.split()
+                    lines = []
+                    current_line = []
+                    current_length = 0
+
+                    for word in words:
+                        word_len = len(word)
+                        # space needed if not first word
+                        needed = word_len + (1 if current_line else 0)
+
+                        if current_length + needed <= chars_per_line:
+                            current_line.append(word)
+                            current_length += needed
+                        else:
+                            if current_line:
+                                lines.append(" ".join(current_line))
+                            current_line = [word]
+                            current_length = word_len
+
+                    if current_line:
+                        lines.append(" ".join(current_line))
+
+                    # Update text to include \n
+                    node["text"] = "\n".join(lines)
+                    num_lines = len(lines)
+
+                    text_height = (
+                        num_lines
+                        * font_size
+                        * settings.DEFAULT_EXCALIDRAW_ELEMENT_TEXT_LINE_HEIGHT
+                    )
+
+                    height += text_height
+
+                # Add padding to dimensions as well
+                node["width"] = width + (2 * padding)
+                node["height"] = height + (2 * padding)
+
+            else:
+                # Recurse
+                for child in children:
+                    process_node(child)
+
+        for node in elk_graph.get("children", []):
+            process_node(node)
+
+        return elk_graph, agent_response
+
+    def generate_elk_output_json(self, elk_graph: dict) -> dict:
+        with httpx.Client() as client:
+            response = client.post(
+                settings.ELK_SERVICE_ENDPOINT, json={"jsonGraph": elk_graph}
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def generate_excalidraw_from_description(self, graph_state: dict) -> dict:
+        elk_input_graph, graph_state = await self.generate_elk_json_input_using_agent(
+            graph_state
+        )
+        elk_output_graph = self.generate_elk_output_json(elk_input_graph)
+        excalidraw_json = self.convert_elk_json_to_excalidraw(elk_output_graph)
+        return excalidraw_json, graph_state
+
+
+def get_diagram_service() -> DiagramService:
+    return DiagramService()

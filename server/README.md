@@ -35,3 +35,5 @@ diagram-copilot/
 │ ├── pyproject.toml
 │ ├── run.py # Entry point (instead of main.py)
 │ └── README.md
+
+# Build and push the Docker image to ECR
