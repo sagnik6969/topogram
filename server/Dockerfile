@@ -3,7 +3,7 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS requirements-stage
 
 WORKDIR /tmp
 
-COPY pyproject.toml ./
+COPY pyproject.toml uv.lock ./
 
 RUN uv export --frozen --no-dev --format requirements-txt > requirements.txt
 
