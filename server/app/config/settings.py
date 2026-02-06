@@ -2,7 +2,7 @@ from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 from pydantic import SecretStr
-from typing import Optional, List
+from typing import List
 
 load_dotenv()
 
@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     ELK_SERVICE_ENDPOINT: str
     RATE_LIMIT_ENABLED: bool = True
     DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER: List[str] = []
-    DEFAULT_CHAT_RATE_LIMITS_PER_USER:List[str] = []
-    DEFAULT_RATE_LIMITS_FOR_ENDPOINTS:List[str] = []
+    DEFAULT_CHAT_RATE_LIMITS_PER_USER: List[str] = []
+    DEFAULT_RATE_LIMITS_FOR_ENDPOINTS: List[str] = []
+    GLOBAL_CHAT_RATE_LIMITS: List[str] = []
+    GLOBAL_CHAT_RATE_LIMIT_KEY: str = "global_chat_resource_limit"
     DEFAULT_EXCALIDRAW_ELEMENT_WIDTH: int = 150
     DEFAULT_EXCALIDRAW_ELEMENT_HEIGHT: int = 100
     DEFAULT_EXCALIDRAW_ELEMENT_STROKE_COLOR: str = "#1e1e1e"
@@ -37,18 +39,32 @@ class Settings(BaseSettings):
         """Validate that rate limit settings are provided when rate limiting is enabled."""
         if self.RATE_LIMIT_ENABLED:
             missing_fields = []
-            if not self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER or len(self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER) == 0:
+            if (
+                not self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER
+                or len(self.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER) == 0
+            ):
                 missing_fields.append("DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER")
-            if not self.DEFAULT_CHAT_RATE_LIMITS_PER_USER or len(self.DEFAULT_CHAT_RATE_LIMITS_PER_USER) == 0:
+            if (
+                not self.DEFAULT_CHAT_RATE_LIMITS_PER_USER
+                or len(self.DEFAULT_CHAT_RATE_LIMITS_PER_USER) == 0
+            ):
                 missing_fields.append("DEFAULT_CHAT_RATE_LIMITS_PER_USER")
-            if not self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS or len(self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS) == 0:
+            if (
+                not self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS
+                or len(self.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS) == 0
+            ):
                 missing_fields.append("DEFAULT_RATE_LIMITS_FOR_ENDPOINTS")
-            
+            if (
+                not self.GLOBAL_CHAT_RATE_LIMITS
+                or len(self.GLOBAL_CHAT_RATE_LIMITS) == 0
+            ):
+                missing_fields.append("GLOBAL_CHAT_RATE_LIMITS")
+
             if missing_fields:
                 raise ValueError(
                     f"When RATE_LIMIT_ENABLED is True, the following fields are required: {', '.join(missing_fields)}"
                 )
-        
+
         return self
 
 
