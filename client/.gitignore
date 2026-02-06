@@ -26,3 +26,5 @@ test*.json
 
 .firebase
 .env
+package-lock.json
+yarn.lock
