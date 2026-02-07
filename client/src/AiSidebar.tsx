@@ -78,7 +78,9 @@ export const AiSidebar = ({
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       setHistory([]);
       setInput("");
       setChatId(null);

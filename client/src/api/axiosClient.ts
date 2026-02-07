@@ -10,6 +10,13 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   async (config) => {
+    // Skip auth token if authentication is disabled
+    const isAuthDisabled = import.meta.env.VITE_AUTH_DISABLED === "true";
+
+    if (isAuthDisabled || !auth) {
+      return config;
+    }
+
     const user = auth.currentUser;
     if (user) {
       try {
