@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  # ===================================
+  # Client - Frontend Application
+  # ===================================
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:9754/main_backend_service
+        - VITE_AUTH_DISABLED=true
+    ports:
+      - "9753:80"
+    depends_on:
+      - server
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Server - Main Backend Service
+  # ===================================
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "9754:8000"
+    environment:
+      # Rendering engine endpoint (internal network)
+      - ELK_SERVICE_ENDPOINT=http://rendering-engine:3000
+      # Firestore emulator settings
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - GOOGLE_CLOUD_PROJECT=diagram-copilot-local
+      # CORS configuration
+      - CORES_ALLOWED_ORIGINS=http://localhost:9753,http://localhost:80
+      # Disable authentication and rate limiting for local development
+      - AUTH_DISABLED=true
+      - RATE_LIMIT_ENABLED=false
+      # Redis settings (still required even if rate limiting is disabled)
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=dummy
+      # Debug mode
+      - DEBUG=true
+    depends_on:
+      - rendering-engine
+      - firestore
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Rendering Engine - Internal Service
+  # ===================================
+  rendering-engine:
+    build:
+      context: ./rendering-engine
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Firestore Emulator - Internal Service
+  # ===================================
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
+    expose:
+      - "8080"
+    networks:
+      - diagram-copilot-network
+
+networks:
+  diagram-copilot-network:
+    driver: bridge
