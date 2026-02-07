@@ -63,12 +63,14 @@ export const AiSidebar = ({
       setHistory((prev) => [newHistoryItem, ...prev]);
     } catch (error: any) {
       if (error?.response?.status === 429) {
-        const errorMessage = error.response?.data?.error ?? "Too many requests. Please try again after some time.";
+        const errorMessage =
+          error.response?.data?.error ??
+          "Too many requests. Please try again after some time.";
         toast.error(errorMessage);
-      }
-      else toast.error(
-        "Error generating diagram. Please try again after refreshing the page.",
-      );
+      } else
+        toast.error(
+          "Error generating diagram. Please try again after refreshing the page.",
+        );
 
       console.error("Error generating diagram:", error);
     } finally {
@@ -86,6 +88,7 @@ export const AiSidebar = ({
       setChatId(null);
     } catch (error) {
       console.error("Error signing out: ", error);
+      toast.error("Error signing out. Please try again.");
     }
   };
 
@@ -140,9 +143,7 @@ export const AiSidebar = ({
                   }}
                   maxLength={500}
                 />
-                <div className="ai-char-counter">
-                  {input.length}/500
-                </div>
+                <div className="ai-char-counter">{input.length}/500</div>
               </div>
 
               <div className="ai-generate-actions">
