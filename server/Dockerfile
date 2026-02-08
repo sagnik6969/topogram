@@ -20,7 +20,6 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Copy application code
 COPY app app/
-COPY utils utils/
 
 
 # Expose the application port

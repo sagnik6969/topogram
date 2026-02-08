@@ -16,6 +16,26 @@ export const useAuth = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Check if authentication is disabled via environment variable
+        const isAuthDisabled = import.meta.env.VITE_AUTH_DISABLED === 'true';
+        console.log("isAuthDisabled", import.meta.env.VITE_AUTH_DISABLED);
+
+        if (isAuthDisabled) {
+            // Return a mock user when auth is disabled
+            setUser({
+                uid: 'mock-user-id',
+                email: 'mock@example.com',
+                displayName: 'Mock User',
+            } as User);
+            setLoading(false);
+            return;
+        }
+
+        if (!auth) {
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
             setLoading(false);
@@ -35,6 +55,10 @@ export const Auth = () => {
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setAuthError(null);
+        if (!auth) {
+            setAuthError("Authentication is not available");
+            return;
+        }
         try {
             if (isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, password);
@@ -48,6 +72,10 @@ export const Auth = () => {
 
     const handleGoogleLogin = async () => {
         setAuthError(null);
+        if (!auth) {
+            setAuthError("Authentication is not available");
+            return;
+        }
         const provider = new GoogleAuthProvider();
         try {
             await signInWithPopup(auth, provider);

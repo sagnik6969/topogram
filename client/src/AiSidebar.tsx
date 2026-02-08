@@ -63,12 +63,14 @@ export const AiSidebar = ({
       setHistory((prev) => [newHistoryItem, ...prev]);
     } catch (error: any) {
       if (error?.response?.status === 429) {
-        const errorMessage = error.response?.data?.error ?? "Too many requests. Please try again after some time.";
+        const errorMessage =
+          error.response?.data?.error ??
+          "Too many requests. Please try again after some time.";
         toast.error(errorMessage);
-      }
-      else toast.error(
-        "Error generating diagram. Please try again after refreshing the page.",
-      );
+      } else
+        toast.error(
+          "Error generating diagram. Please try again after refreshing the page.",
+        );
 
       console.error("Error generating diagram:", error);
     } finally {
@@ -78,12 +80,15 @@ export const AiSidebar = ({
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       setHistory([]);
       setInput("");
       setChatId(null);
     } catch (error) {
       console.error("Error signing out: ", error);
+      toast.error("Error signing out. Please try again.");
     }
   };
 
@@ -136,11 +141,9 @@ export const AiSidebar = ({
                       handleGenerate();
                     }
                   }}
-                  maxLength={500}
+                  maxLength={import.meta.env.VITE_MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE}
                 />
-                <div className="ai-char-counter">
-                  {input.length}/500
-                </div>
+                <div className="ai-char-counter">{input.length}/{import.meta.env.VITE_MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE}</div>
               </div>
 
               <div className="ai-generate-actions">

@@ -2,7 +2,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
 from app.config.settings import settings
-from fastapi import HTTPException, Depends
+
 
 def get_user_id(request: Request) -> str:
     """
@@ -11,14 +11,18 @@ def get_user_id(request: Request) -> str:
     and populated `request.state.uid`.
     If no user ID is found (e.g., public endpoint), it falls back to IP.
     """
-    print("rate limit")
     if hasattr(request.state, "uid"):
         return str(request.state.uid)
     return get_remote_address(request)
 
 
+# Define a constant key function for global limiting
+def global_key(request: Request):
+    return settings.GLOBAL_CHAT_RATE_LIMIT_KEY
+
+
 # Initialize the Limiter
-# storage_uri is constructed from settings. 
+# storage_uri is constructed from settings.
 # slowapi expects `redis://` or `rediss://`
 # If your redis password has special chars, it might need encoding, but usually this is fine.
 redis_url = f"redis://:{settings.REDIS_PASSWORD.get_secret_value()}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
@@ -29,5 +33,5 @@ limiter = Limiter(
     strategy="fixed-window",
     enabled=settings.RATE_LIMIT_ENABLED,
     default_limits=settings.DEFAULT_RATE_LIMITS_FOR_ENDPOINTS,
-    application_limits=settings.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER
+    application_limits=settings.DEFAULT_APPLICATION_LEVEL_RATE_LIMITS_PER_USER,
 )

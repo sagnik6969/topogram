@@ -16,8 +16,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 1rem 0.5rem 1rem 1.25rem;
   border-bottom: 1px solid #f0f0f0;
+  flex:1
 }
 
 .ai-sidebar-header h3 {
@@ -300,6 +301,9 @@
 
 /* Logout button */
 .ai-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;

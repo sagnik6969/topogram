@@ -3,7 +3,7 @@ from app.services.diagram_service import DiagramService, get_diagram_service
 from fastapi import Depends
 from app.db.repositories.chat_repository import LanggraphCheckpoints, ChatRepository
 from fastapi import HTTPException
-from utils.serialize_checkpoint import serialize_checkpoint
+from app.utils.serialize_checkpoint import serialize_checkpoint
 
 
 class ChatService:

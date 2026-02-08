@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  # ===================================
+  # Client - Frontend Application
+  # ===================================
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:9754
+        - VITE_AUTH_DISABLED=true
+        - VITE_MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE=2000
+    ports:
+      - "9753:80"
+    depends_on:
+      - server
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Server - Main Backend Service
+  # ===================================
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "9754:8000"
+    env_file:
+      - .env
+    environment:
+      # Docker-specific overrides (these take precedence over .env file)
+      - ELK_SERVICE_ENDPOINT=http://rendering-engine:3000/diagrams/render-graph
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - GOOGLE_CLOUD_PROJECT=diagram-copilot-local
+      - CORES_ALLOWED_ORIGINS=http://localhost:9753,http://localhost:80
+      - AUTH_DISABLED=true
+      - RATE_LIMIT_ENABLED=false
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=dummy
+      - DEBUG=true
+    depends_on:
+      - rendering-engine
+      - firestore
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Rendering Engine - Internal Service
+  # ===================================
+  rendering-engine:
+    build:
+      context: ./rendering-engine
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    networks:
+      - diagram-copilot-network
+
+  # ===================================
+  # Firestore Emulator - Internal Service
+  # ===================================
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
+    expose:
+      - "8080"
+    networks:
+      - diagram-copilot-network
+
+networks:
+  diagram-copilot-network:
+    driver: bridge

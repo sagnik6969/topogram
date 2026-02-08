@@ -1,10 +1,10 @@
 import logging
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from app.api.v1 import router as v1_router
 from app.config.settings import settings
 from contextlib import asynccontextmanager
 from firebase_admin import initialize_app, delete_app
-from utils.auth import authenticate_user, authentication_middleware
+from app.utils.auth import authentication_middleware
 from fastapi.middleware.cors import CORSMiddleware
 from langfuse import get_client
 import redis
@@ -13,6 +13,7 @@ from app.core.rate_limit import limiter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIASGIMiddleware
+
 if settings.DEBUG:
     logging.basicConfig(level=logging.DEBUG)
 else:
@@ -53,6 +54,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(SlowAPIASGIMiddleware)
 
+
 # Use FastAPI's middleware decorator for authentication
 @app.middleware("http")
 async def auth_middleware(request, call_next):
@@ -73,11 +75,22 @@ app.include_router(v1_router)
 @limiter.exempt
 async def health_check():
     try:
-        r = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, password=settings.REDIS_PASSWORD.get_secret_value(), socket_connect_timeout=3,retry_on_timeout=True)
+        r = redis.Redis(
+            host=settings.REDIS_HOST,
+            port=settings.REDIS_PORT,
+            password=settings.REDIS_PASSWORD.get_secret_value(),
+            socket_connect_timeout=3,
+            retry_on_timeout=True,
+        )
         if r.ping():
-            return {"status": "success", "message": f"Connected to Redis at {settings.REDIS_HOST}"}
+            return {
+                "status": "success",
+                "message": f"Connected to Redis at {settings.REDIS_HOST}",
+            }
     except redis.ConnectionError as e:
-        raise HTTPException(status_code=500, detail=f"Redis connection failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Redis connection failed: {str(e)}"
+        )
         logger.exception(e)
 
 

@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends, Request
 from app.api.v1.schemas.chat import ChatRequest
-from app.services.chart_service import get_chat_service, ChatService
+from app.services.chat_service import get_chat_service, ChatService
 from app.config.settings import settings
-from app.core.rate_limit import limiter
+from app.core.rate_limit import limiter, global_key
+
 router = APIRouter(prefix="/chat", tags=["chat"])
+
 
 @router.post("/")
 @limiter.limit("; ".join(settings.DEFAULT_CHAT_RATE_LIMITS_PER_USER))
+@limiter.limit(
+    "; ".join(settings.GLOBAL_CHAT_RATE_LIMITS),
+    key_func=global_key,
+)
 async def chat_endpoint(
     request: Request,
     chat_request: ChatRequest,
@@ -38,5 +44,3 @@ async def get_chat(
     chat_service: ChatService = Depends(get_chat_service),
 ):
     return await chat_service.get_chat(thread_id=thread_id, user_id=request.state.uid)
-
-
