@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     USER_ID_WHEN_AUTH_DISABLED: str = (
         "test-user"  # Default user ID to use when authentication is disabled
     )
+    MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE: int = 2000
 
     model_config = ConfigDict(env_file=".env", case_sensitive=True, extra="allow")
 
