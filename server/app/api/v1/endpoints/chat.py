@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from app.api.v1.schemas.chat import ChatRequest
-from app.services.chart_service import get_chat_service, ChatService
+from app.services.chat_service import get_chat_service, ChatService
 from app.config.settings import settings
 from app.core.rate_limit import limiter, global_key
 
