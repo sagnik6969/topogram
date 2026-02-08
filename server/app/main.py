@@ -82,6 +82,8 @@ async def health_check():
             socket_connect_timeout=3,
             retry_on_timeout=True,
         )
+        
+        r.close()
         if r.ping():
             return {
                 "status": "success",
