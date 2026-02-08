@@ -23,7 +23,7 @@ We are actively working on expanding Topogram's capabilities:
 
 Topogram is built using modern, scalable technologies:
 
-- **Frontend**: React, Vite, TailwindCSS, Mermaid.js / Excalidraw
+- **Frontend**: React, Vite, Excalidraw
 - **Backend API**: Python (FastAPI), managed with `uv`
 - **AI Integration**: LangChain, Google Gemini API
 - **Monitoring**: LangFuse (for LLM observability)
