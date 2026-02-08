@@ -2,7 +2,7 @@
 
 Topogram is an open-source, AI-powered diagramming tool designed as a free alternative to Eraser.io. It leverages the power of Large Language Models (LLMs) to generate and edit diagrams effortlessly, streamlining documentation and architectural design for developers.
 
-Built with a focus on simplicity and power, Topogram allows you to transform text descriptions into clear, editable visual diagrams instantly.
+Built with a focus on simplicity, Topogram allows you to transform text descriptions into clear, editable visual diagrams instantly.
 
 ## 🚀 Key Features
 
