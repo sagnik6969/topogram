@@ -141,9 +141,9 @@ export const AiSidebar = ({
                       handleGenerate();
                     }
                   }}
-                  maxLength={500}
+                  maxLength={import.meta.env.VITE_MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE}
                 />
-                <div className="ai-char-counter">{input.length}/500</div>
+                <div className="ai-char-counter">{input.length}/{import.meta.env.VITE_MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE}</div>
               </div>
 
               <div className="ai-generate-actions">
