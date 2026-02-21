@@ -15,4 +15,6 @@ dependencies = [
     "mangum>=0.17.0",
     "redis>=7.1.0",
     "slowapi>=0.1.9",
+    "langchain-openai>=1.1.10",
+    "langchain-cerebras>=0.8.2",
 ]
