@@ -25,7 +25,7 @@ Topogram is built using modern, scalable technologies:
 
 - **Frontend**: React, Vite, Excalidraw
 - **Backend API**: Python (FastAPI), managed with `uv`
-- **AI Integration**: LangChain, Google Gemini API
+- **AI Integration**: LangChain, ChatCerebras (gpt-oss)
 - **Monitoring**: LangFuse (for LLM observability)
 - **Database**: Firestore (Emulated locally for development), Redis
 - **Rendering**: Node.js microservice for diagram layout (ELK)
@@ -60,11 +60,11 @@ cp .env.example .env
 Open the `.env` file and verify or add your configuration:
 
 ```env
-GOOGLE_API_KEY=your_gemini_api_key_here
+CEREBRAS_API_KEY=your_cerebras_api_key_here
 MAX_NUMBER_OF_CHARACTERS_IN_CHAT_MESSAGE=2000
 ```
 
-> **Note**: You can obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/).
+> **Note**: You can obtain a Cerebras API key from the [Cerebras Cloud Platform](https://cloud.cerebras.ai/).
 
 ### 3. Run with Docker Compose
 
