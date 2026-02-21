@@ -3,7 +3,7 @@ from app.config.settings import settings
 from langchain_cerebras import ChatCerebras
 
 default_chat_model = ChatCerebras(
-    model="llama-3.3-70b",
+    model="gpt-oss-120b",
 )
 
  
