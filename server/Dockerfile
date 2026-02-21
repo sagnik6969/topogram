@@ -1,5 +1,5 @@
 # Stage 1: Generate requirements.txt
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS requirements-stage
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS requirements-stage
 
 WORKDIR /tmp
 
@@ -8,7 +8,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv export --frozen --no-dev --format requirements-txt > requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.13-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
