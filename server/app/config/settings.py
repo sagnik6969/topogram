@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_PASSWORD: SecretStr
+    DEFAULT_CHAT_MODEL_NAME: str
     CORES_ALLOWED_ORIGINS: str
     ELK_SERVICE_ENDPOINT: str
     RATE_LIMIT_ENABLED: bool = True
